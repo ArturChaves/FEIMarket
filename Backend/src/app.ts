@@ -9,6 +9,7 @@ import { checkRedis } from './config/redis';
 import { checkCassandra } from './config/cassandra';
 import { checkMinio } from './config/minio';
 import { errorHandler } from './middlewares/errorHandler';
+import authRoutes from './routes/auth.routes';
 
 const app = express();
 const PORT = process.env['PORT'] ?? 4000;
@@ -29,6 +30,8 @@ app.get('/health', async (_req, res) => {
     databases: { postgres, mongo, redis: redisStatus, cassandra, minio },
   });
 });
+
+app.use('/auth', authRoutes);
 
 app.use(errorHandler);
 
