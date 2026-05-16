@@ -1,0 +1,52 @@
+import 'dotenv/config';
+import express from 'express';
+import { connectMongo } from './config/mongo';
+import { connectCassandra } from './config/cassandra';
+import { redis } from './config/redis';
+import { checkPostgres } from './config/postgres';
+import { checkMongo } from './config/mongo';
+import { checkRedis } from './config/redis';
+import { checkCassandra } from './config/cassandra';
+import { checkMinio } from './config/minio';
+import { errorHandler } from './middlewares/errorHandler';
+
+const app = express();
+const PORT = process.env['PORT'] ?? 4000;
+
+app.use(express.json());
+
+app.get('/health', async (_req, res) => {
+  const [postgres, mongo, redisStatus, cassandra, minio] = await Promise.all([
+    checkPostgres(),
+    checkMongo(),
+    checkRedis(),
+    checkCassandra(),
+    checkMinio(),
+  ]);
+
+  res.json({
+    status: 'ok',
+    databases: { postgres, mongo, redis: redisStatus, cassandra, minio },
+  });
+});
+
+app.use(errorHandler);
+
+async function bootstrap() {
+  await connectMongo();
+  await connectCassandra();
+  await redis.connect();
+
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
+}
+
+process.on('SIGTERM', async () => {
+  await redis.quit();
+  process.exit(0);
+});
+
+bootstrap();
+
+export default app;
