@@ -1,0 +1,292 @@
+services:
+
+  # ============================================================
+  # BANCOS DE DADOS
+  # ============================================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: marketplace_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: marketplace
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - marketplace_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d marketplace"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7
+    container_name: marketplace_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: marketplace
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - marketplace_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: marketplace_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --appendfsync everysec
+    volumes:
+      - redis_data:/data
+    networks:
+      - marketplace_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: marketplace_cassandra
+    restart: unless-stopped
+    environment:
+      CASSANDRA_CLUSTER_NAME: marketplace_cluster
+      CASSANDRA_DC: datacenter1
+      CASSANDRA_RACK: rack1
+      HEAP_NEWSIZE: 128M
+      MAX_HEAP_SIZE: 512M
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    networks:
+      marketplace_net:
+        ipv4_address: 172.28.0.10
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status | grep -E '^UN'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ============================================================
+  # OBJECT STORAGE
+  # ============================================================
+
+  minio:
+    image: minio/minio:latest
+    container_name: marketplace_minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - marketplace_net
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: marketplace_minio_init
+    restart: on-failure
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - marketplace_net
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 minioadmin minioadmin123;
+        mc mb --ignore-existing local/marketplace-products;
+        mc mb --ignore-existing local/marketplace-avatars;
+        mc mb --ignore-existing local/marketplace-static;
+        mc anonymous set public local/marketplace-products;
+        mc anonymous set public local/marketplace-avatars;
+        mc anonymous set public local/marketplace-static;
+        echo 'Buckets criados com sucesso!';
+      "
+
+  # ============================================================
+  # FERRAMENTAS DE OBSERVABILIDADE
+  # ============================================================
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: marketplace_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@marketplace.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./database/pgadmin/servers.json:/pgadmin4/servers.json
+    networks:
+      - marketplace_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: marketplace_mongo_express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongo:27017/
+      ME_CONFIG_BASICAUTH: "false"
+    ports:
+      - "8081:8081"
+    networks:
+      - marketplace_net
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: marketplace_redisinsight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    networks:
+      - marketplace_net
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  cassandra-web:
+    image: dcagatay/cassandra-web:latest
+    container_name: marketplace_cassandra_web
+    restart: unless-stopped
+    environment:
+      CASSANDRA_HOST_IPS: "172.28.0.10"   # IP estático obrigatório — não aceita hostname
+      CASSANDRA_PORT: 9042
+    ports:
+      - "3001:3000"
+    networks:
+      marketplace_net:
+        ipv4_address: 172.28.0.11
+    depends_on:
+      cassandra:
+        condition: service_healthy
+
+  # ============================================================
+  # APLICAÇÃO
+  # ============================================================
+
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: marketplace_backend
+  #   restart: unless-stopped
+  #   environment:
+  #     NODE_ENV: development
+  #     PORT: 4000
+  #     DATABASE_URL: postgresql://admin:admin123@postgres:5432/marketplace
+  #     MONGODB_URI: mongodb://admin:admin123@mongo:27017/marketplace?authSource=admin
+  #     REDIS_URL: redis://redis:6379
+  #     CASSANDRA_CONTACT_POINTS: cassandra
+  #     CASSANDRA_DATACENTER: datacenter1
+  #     CASSANDRA_KEYSPACE: marketplace
+  #     MINIO_ENDPOINT: minio
+  #     MINIO_PORT: 9000
+  #     MINIO_ACCESS_KEY: minioadmin
+  #     MINIO_SECRET_KEY: minioadmin123
+  #     MINIO_USE_SSL: "false"
+  #     MINIO_PUBLIC_URL: http://localhost:9000
+  #   ports:
+  #     - "4000:4000"
+  #   volumes:
+  #     - ./backend:/app
+  #     - /app/node_modules
+  #   networks:
+  #     - marketplace_net
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     mongo:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     cassandra:
+  #       condition: service_healthy
+  #     minio:
+  #       condition: service_healthy
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: marketplace_frontend
+  #   restart: unless-stopped
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: http://localhost:4000
+  #     NEXT_PUBLIC_MINIO_URL: http://localhost:9000
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #     - /app/.next
+  #   networks:
+  #     - marketplace_net
+  #   depends_on:
+  #     - backend
+
+# ============================================================
+# VOLUMES
+# ============================================================
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
+  cassandra_data:
+  minio_data:
+  pgadmin_data:
+  redisinsight_data:
+
+# ============================================================
+# NETWORK
+# ============================================================
+
+networks:
+  marketplace_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
