@@ -118,6 +118,15 @@ export async function getProduct(id: string, userId?: string) {
 
   if (!product) throw new AppError(404, 'Produto não encontrado');
 
+  const avgRating = reviews.length > 0
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    : 0;
+
+  const productWithRating = {
+    ...product,
+    rating: Math.round(avgRating * 10) / 10
+  };
+
   if (userId) {
     await cassandraRepository.insertView(
       types.Uuid.fromString(userId),
@@ -127,7 +136,7 @@ export async function getProduct(id: string, userId?: string) {
     );
   }
 
-  return { product, reviews };
+  return { product: productWithRating, reviews };
 }
 
 export async function createProduct(body: unknown, files: Express.Multer.File[]) {

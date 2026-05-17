@@ -138,10 +138,16 @@ export default function ProductDetail() {
           
           <div className="flex items-center gap-4 mb-6">
             <div className="flex items-center gap-1 text-yellow-500">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className={`w-5 h-5 ${i < 4 ? 'fill-current' : ''}`} />
-              ))}
-              <span className="ml-1 text-gray-900 font-bold">4.5</span>
+              {[...Array(5)].map((_, i) => {
+                const avgRating = product.rating || 0;
+                const isFilled = i < Math.round(avgRating);
+                return (
+                  <Star key={i} className={`w-5 h-5 ${isFilled ? 'fill-current' : 'text-gray-200'}`} />
+                );
+              })}
+              <span className="ml-1 text-gray-900 font-bold">
+                {product.rating ? product.rating.toFixed(1) : '0.0'}
+              </span>
             </div>
             <span className="text-gray-400">|</span>
             <span className="text-gray-500 font-medium">{reviews.length} Avaliações</span>

@@ -30,19 +30,32 @@ export const productRepository = {
   },
 
   async list(filter: ProductFilter, sort: Record<string, 1 | -1>, skip: number, limit: number) {
-    const [products, total] = await Promise.all([
-      Product.find(filter).sort(sort).skip(skip).limit(limit).lean(),
-      Product.countDocuments(filter),
-    ]);
-    return { products, total };
+    const pipeline: PipelineStage[] = [
+      { $match: filter },
+      { $lookup: { from: 'reviews', localField: '_id', foreignField: 'product_id', as: 'reviews' } },
+      { $addFields: { 
+          rating: { $ifNull: [{ $avg: '$reviews.rating' }, 0] },
+          avg_rating: { $ifNull: [{ $avg: '$reviews.rating' }, 0] }
+      } },
+      { $sort: sort as any },
+      { $facet: {
+          data:  [{ $skip: skip }, { $limit: limit }],
+          count: [{ $count: 'total' }],
+      }},
+    ];
+    const [result] = await Product.aggregate<AggregationFacetResult>(pipeline);
+    return { products: result?.data ?? [], total: result?.count[0]?.total ?? 0 };
   },
 
   async listWithRating(filter: ProductFilter, skip: number, limit: number) {
     const pipeline: PipelineStage[] = [
       { $match: filter },
       { $lookup: { from: 'reviews', localField: '_id', foreignField: 'product_id', as: 'reviews' } },
-      { $addFields: { avg_rating: { $ifNull: [{ $avg: '$reviews.rating' }, 0] } } },
-      { $sort: { avg_rating: -1 as const } },
+      { $addFields: { 
+          rating: { $ifNull: [{ $avg: '$reviews.rating' }, 0] },
+          avg_rating: { $ifNull: [{ $avg: '$reviews.rating' }, 0] }
+      } },
+      { $sort: { rating: -1 as const } },
       { $facet: {
           data:  [{ $skip: skip }, { $limit: limit }],
           count: [{ $count: 'total' }],

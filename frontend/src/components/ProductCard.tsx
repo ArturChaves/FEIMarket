@@ -79,7 +79,7 @@ export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive,
           </div>
           <div className="flex items-center text-amber-500 text-[10px] font-bold bg-amber-50 px-2 py-0.5 rounded-full">
             <Star className="w-2.5 h-2.5 fill-current mr-1" />
-            <span>4.5</span>
+            <span>{product.rating ? product.rating.toFixed(1) : '0.0'}</span>
           </div>
         </div>
         
