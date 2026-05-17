@@ -68,6 +68,14 @@ export const userRepository = {
     return rows[0] ?? null;
   },
 
+  async addBalance(id: string, amount: number): Promise<UserRow | null> {
+    const { rows } = await pool.query<UserRow>(
+      'UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND is_active = TRUE RETURNING id, name, email, role, balance, avatar_url',
+      [amount, id]
+    );
+    return rows[0] ?? null;
+  },
+
   async updateAvatarUrl(id: string, avatarUrl: string): Promise<void> {
     await pool.query(
       'UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2',

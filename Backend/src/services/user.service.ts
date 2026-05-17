@@ -22,9 +22,9 @@ export async function getProfile(userId: string) {
 
   const uuid = types.Uuid.fromString(userId);
   const [last_login, last_view, last_purchase] = await Promise.all([
-    cassandraRepository.getLastLogin(uuid),
-    cassandraRepository.getLastView(uuid),
-    cassandraRepository.getLastPurchase(uuid),
+    cassandraRepository.getLastLogin(uuid).catch(() => null),
+    cassandraRepository.getLastView(uuid).catch(() => null),
+    cassandraRepository.getLastPurchase(uuid).catch(() => null),
   ]);
 
   return {
@@ -41,6 +41,13 @@ export async function updateProfile(userId: string, body: unknown) {
   if (!user) throw new AppError(404, 'Usuário não encontrado');
 
   return { user: { ...user, balance: parseFloat(user.balance) } };
+}
+
+export async function addBalance(userId: string, body: unknown) {
+  const { amount } = z.object({ amount: z.number().positive() }).parse(body);
+  const user = await userRepository.addBalance(userId, amount);
+  if (!user) throw new AppError(404, 'Usuário não encontrado');
+  return { message: 'Saldo adicionado com sucesso', user: { ...user, balance: parseFloat(user.balance) } };
 }
 
 export async function uploadAvatar(userId: string, file: Express.Multer.File) {

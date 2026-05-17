@@ -15,6 +15,13 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
   } catch (err) { next(err); }
 }
 
+export async function addBalance(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await userService.addBalance(req.params['userId']!, req.body);
+    res.json(result);
+  } catch (err) { next(err); }
+}
+
 export async function uploadAvatar(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     if (!req.file) { res.status(400).json({ error: 'Nenhuma imagem enviada' }); return; }
