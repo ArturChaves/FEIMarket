@@ -310,7 +310,17 @@ O comando sobe em paralelo: PostgreSQL, MongoDB, Redis, Cassandra, MinIO, o back
 
 O backend imprime `Server running on port 4000` quando estiver pronto. O Cassandra é o banco mais lento para inicializar (~60 segundos); o backend aguarda automaticamente via healthcheck no Docker Compose. Os buckets do MinIO (`marketplace-products`, `marketplace-avatars`) são criados e configurados como públicos automaticamente pelo serviço `minio-init` na primeira execução.
 
-**4. Acessar a API**
+**4. Popular o banco com dados de exemplo (opcional)**
+
+Com o ambiente já rodando, execute o script de seed na raiz do projeto:
+
+```bash
+node populate.js
+```
+
+O script cria 5 usuários de teste, adiciona saldo a cada um, cadastra 30 produtos com imagens, posta avaliações e realiza compras. Requer Node.js 18+ instalado localmente (não precisa estar dentro do container).
+
+**5. Acessar a API**
 
 A documentação interativa com todos os endpoints está disponível em:
 ```
