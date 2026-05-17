@@ -11,6 +11,8 @@ import { checkMinio } from './config/minio';
 import { errorHandler } from './middlewares/errorHandler';
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
+import cartRoutes from './routes/cart.routes';
+import orderRoutes from './routes/order.routes';
 
 const app = express();
 const PORT = process.env['PORT'] ?? 4000;
@@ -34,6 +36,8 @@ app.get('/health', async (_req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
+app.use('/cart', cartRoutes);
+app.use('/orders', orderRoutes);
 
 app.use(errorHandler);
 
