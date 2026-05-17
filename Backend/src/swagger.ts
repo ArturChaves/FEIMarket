@@ -416,5 +416,228 @@ export const swaggerSpec: OpenAPIV3.Document = {
       },
     },
 
+    '/products/{id}/reviews': {
+      get: {
+        tags: ['Reviews'],
+        summary: 'Listar reviews de um produto',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          '200': { description: 'Lista de reviews', content: { 'application/json': { schema: { type: 'object', properties: { reviews: { type: 'array', items: { $ref: '#/components/schemas/Review' } } } } } } },
+        },
+      },
+      post: {
+        tags: ['Reviews'],
+        summary: 'Criar review para um produto',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['userId', 'rating', 'comment'],
+                properties: {
+                  userId:  { type: 'string', format: 'uuid' },
+                  rating:  { type: 'integer', minimum: 1, maximum: 5 },
+                  comment: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': { description: 'Review criada', content: { 'application/json': { schema: { type: 'object', properties: { review: { $ref: '#/components/schemas/Review' } } } } } },
+        },
+      },
+    },
+
+    '/users/{userId}/profile': {
+      get: {
+        tags: ['Usuários'],
+        summary: 'Buscar perfil do usuário (PostgreSQL + Cassandra)',
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': {
+            description: 'Perfil do usuário com histórico Cassandra',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    user:      { $ref: '#/components/schemas/User' },
+                    cassandra: {
+                      type: 'object',
+                      properties: {
+                        last_login:    { type: 'object', nullable: true },
+                        last_view:     { type: 'object', nullable: true },
+                        last_purchase: { type: 'object', nullable: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '404': { description: 'Usuário não encontrado', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+        },
+      },
+      put: {
+        tags: ['Usuários'],
+        summary: 'Atualizar perfil do usuário',
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name:  { type: 'string' },
+                  email: { type: 'string', format: 'email' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Perfil atualizado', content: { 'application/json': { schema: { type: 'object', properties: { user: { $ref: '#/components/schemas/User' } } } } } },
+          '400': { description: 'Nenhum campo informado', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+          '404': { description: 'Usuário não encontrado', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+        },
+      },
+    },
+
+    '/admin/stats/postgres': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Estatísticas PostgreSQL (admin)',
+        parameters: [{ name: 'userId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': {
+            description: 'Stats de usuários e pedidos',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    users:  { type: 'object', properties: { total: { type: 'integer' }, active: { type: 'integer' } } },
+                    orders: { type: 'object', properties: { total: { type: 'integer' }, total_revenue: { type: 'number' }, products_sold: { type: 'integer' } } },
+                  },
+                },
+              },
+            },
+          },
+          '401': { description: 'userId obrigatório', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+          '403': { description: 'Acesso restrito a administradores', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+        },
+      },
+    },
+
+    '/admin/stats/mongo': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Estatísticas MongoDB (admin)',
+        parameters: [{ name: 'userId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': {
+            description: 'Stats de produtos e reviews',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    products: { type: 'object', properties: { total: { type: 'integer' }, active: { type: 'integer' }, per_category: { type: 'object' } } },
+                    reviews:  { type: 'object', properties: { total: { type: 'integer' }, avg_rating: { type: 'number', nullable: true } } },
+                  },
+                },
+              },
+            },
+          },
+          '403': { description: 'Acesso restrito a administradores', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+        },
+      },
+    },
+
+    '/admin/stats/redis': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Estatísticas Redis (admin)',
+        parameters: [{ name: 'userId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': {
+            description: 'Stats de conexões e chaves',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    connected_clients: { type: 'integer' },
+                    used_memory_human: { type: 'string' },
+                    keys: { type: 'object', properties: { cart: { type: 'integer' }, search: { type: 'integer' } } },
+                  },
+                },
+              },
+            },
+          },
+          '403': { description: 'Acesso restrito a administradores', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+        },
+      },
+    },
+
+    '/admin/stats/cassandra': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Estatísticas Cassandra (admin)',
+        parameters: [{ name: 'userId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': {
+            description: 'Contagem de eventos por tabela',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    total_logins:    { type: 'integer' },
+                    total_views:     { type: 'integer' },
+                    total_purchases: { type: 'integer' },
+                  },
+                },
+              },
+            },
+          },
+          '403': { description: 'Acesso restrito a administradores', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+        },
+      },
+    },
+
+    '/users/{userId}/avatar': {
+      post: {
+        tags: ['Usuários'],
+        summary: 'Upload de avatar do usuário (MinIO)',
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                required: ['avatar'],
+                properties: {
+                  avatar: { type: 'string', format: 'binary' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Avatar enviado',
+            content: { 'application/json': { schema: { type: 'object', properties: { avatar_url: { type: 'string', format: 'uri' } } } } },
+          },
+          '400': { description: 'Nenhuma imagem enviada', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+        },
+      },
+    },
+
   },
 };
