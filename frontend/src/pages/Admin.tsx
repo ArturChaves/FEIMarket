@@ -17,21 +17,24 @@ export default function Admin() {
   const [inventoryStats, setInventoryStats] = useState<InventoryStats | null>(null);
   const [trafficStats, setTrafficStats] = useState<TrafficStats | null>(null);
   const [activityStats, setActivityStats] = useState<ActivityStats | null>(null);
+  const [latencyStats, setLatencyStats] = useState<Record<string, number> | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadAllStats = async () => {
     setIsRefreshing(true);
     try {
-      const [users, inventory, traffic, activity] = await Promise.all([
+      const [users, inventory, traffic, activity, latency] = await Promise.all([
         api.admin.statsUsers(),
         api.admin.statsInventory(),
         api.admin.statsTraffic(),
         api.admin.statsActivity(),
+        api.admin.statsLatency(),
       ]);
       setUserStats(users);
       setInventoryStats(inventory);
       setTrafficStats(traffic);
       setActivityStats(activity);
+      setLatencyStats(latency);
     } catch (err) {
       console.error('Failed to load admin stats', err);
     } finally {
@@ -187,31 +190,35 @@ export default function Admin() {
           )}
         </section>
 
-        {/* Performance / System Overlap - Optional but good for UI */}
+        {/* Performance / System Overlap - Real DB Latency */}
         <section className="bg-slate-900 rounded-[2.5rem] p-8 text-white overflow-hidden relative md:col-span-1">
           <div className="absolute top-0 right-0 p-8 opacity-5">
             <Activity className="w-40 h-40" />
           </div>
           <h3 className="text-xl font-display font-black mb-6 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-indigo-400" /> System Latency
+            <Activity className="w-5 h-5 text-indigo-400" /> Latência do Sistema
           </h3>
           <div className="space-y-6 relative z-10">
             {[
-              { db: 'PostgreSQL', lat: '14ms', fill: '60%' },
-              { db: 'MongoDB', lat: '8ms', fill: '30%' },
-              { db: 'Redis', lat: '1ms', fill: '5%' },
-              { db: 'Cassandra', lat: '42ms', fill: '85%' },
-            ].map(item => (
-              <div key={item.db} className="space-y-2">
-                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  <span>{item.db}</span>
-                  <span className="text-white">{item.lat}</span>
+              { db: 'PostgreSQL', rawLat: latencyStats?.postgres ?? 14 },
+              { db: 'MongoDB', rawLat: latencyStats?.mongo ?? 8 },
+              { db: 'Redis', rawLat: latencyStats?.redis ?? 1 },
+              { db: 'Cassandra', rawLat: latencyStats?.cassandra ?? 42 },
+            ].map(item => {
+              // Calculate a visual percentage fill for the latency bar (capped at 100ms for max fill)
+              const fillPercent = Math.min(100, Math.max(5, Math.round((item.rawLat / 100) * 100)));
+              return (
+                <div key={item.db} className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <span>{item.db}</span>
+                    <span className="text-white">{item.rawLat}ms</span>
+                  </div>
+                  <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${fillPercent}%` }}></div>
+                  </div>
                 </div>
-                <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: item.fill }}></div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 

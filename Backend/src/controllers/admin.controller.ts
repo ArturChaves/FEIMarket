@@ -16,3 +16,7 @@ export async function getRedisStats(_req: Request, res: Response, next: NextFunc
 export async function getCassandraStats(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try { res.json(await adminService.getCassandraStats()); } catch (err) { next(err); }
 }
+
+export async function getLatencyStats(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  try { res.json(await adminService.getLatencyStats()); } catch (err) { next(err); }
+}

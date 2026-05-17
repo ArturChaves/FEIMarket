@@ -62,16 +62,39 @@ export const cassandraRepository = {
     return result.rows[0] ?? null;
   },
 
-  async countAll(): Promise<{ total_logins: number; total_views: number; total_purchases: number }> {
+  async getRecentActivity() {
     const [loginRes, viewRes, purchaseRes] = await Promise.all([
-      cassandra.execute('SELECT COUNT(*) FROM marketplace.login_history',    [], { prepare: true }),
-      cassandra.execute('SELECT COUNT(*) FROM marketplace.product_views',    [], { prepare: true }),
-      cassandra.execute('SELECT COUNT(*) FROM marketplace.purchase_history', [], { prepare: true }),
+      cassandra.execute('SELECT user_id, logged_at, ip_address, device FROM marketplace.login_history LIMIT 50', [], { prepare: true }).catch(() => ({ rows: [] })),
+      cassandra.execute('SELECT user_id, viewed_at, product_name, price FROM marketplace.product_views LIMIT 50', [], { prepare: true }).catch(() => ({ rows: [] })),
+      cassandra.execute('SELECT user_id, purchased_at, product_name, quantity, total FROM marketplace.purchase_history LIMIT 50', [], { prepare: true }).catch(() => ({ rows: [] })),
     ]);
+
+    const last_logins = loginRes.rows.map(row => ({
+      user_id: row['user_id'] ? row['user_id'].toString() : '',
+      logged_at: row['logged_at'] ? new Date(row['logged_at']).toISOString() : new Date().toISOString(),
+      ip_address: row['ip_address'] ?? 'N/A',
+      device: row['device'] ?? 'N/A'
+    })).sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()).slice(0, 10);
+
+    const last_views = viewRes.rows.map(row => ({
+      user_id: row['user_id'] ? row['user_id'].toString() : '',
+      product_name: row['product_name'] ?? 'N/A',
+      price: row['price'] ? parseFloat(row['price'].toString()) : 0,
+      viewed_at: row['viewed_at'] ? new Date(row['viewed_at']).toISOString() : new Date().toISOString()
+    })).sort((a, b) => new Date(b.viewed_at).getTime() - new Date(a.viewed_at).getTime()).slice(0, 10);
+
+    const last_purchases = purchaseRes.rows.map(row => ({
+      user_id: row['user_id'] ? row['user_id'].toString() : '',
+      product_name: row['product_name'] ?? 'N/A',
+      quantity: row['quantity'] ?? 0,
+      total: row['total'] ? parseFloat(row['total'].toString()) : 0,
+      purchased_at: row['purchased_at'] ? new Date(row['purchased_at']).toISOString() : new Date().toISOString()
+    })).sort((a, b) => new Date(b.purchased_at).getTime() - new Date(a.purchased_at).getTime()).slice(0, 10);
+
     return {
-      total_logins:    loginRes.rows[0]    ? Number(loginRes.rows[0]!['count'])    : 0,
-      total_views:     viewRes.rows[0]     ? Number(viewRes.rows[0]!['count'])     : 0,
-      total_purchases: purchaseRes.rows[0] ? Number(purchaseRes.rows[0]!['count']) : 0,
+      last_logins,
+      last_views,
+      last_purchases
     };
   },
 };

@@ -23,6 +23,19 @@ const fetcher = async <T>(path: string, options?: RequestInit): Promise<T> => {
   return res.json();
 };
 
+const getUserId = (): string => {
+  try {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed.id || '';
+    }
+  } catch (e) {
+    console.error('Failed to get userId from localStorage', e);
+  }
+  return '';
+};
+
 export const api = {
   auth: {
     login: async (body: any) => {
@@ -82,10 +95,45 @@ export const api = {
     }
   },
   admin: {
-    statsUsers: async () => MOCK_ADMIN_STATS.users,
-    statsInventory: async () => MOCK_ADMIN_STATS.inventory,
-    statsTraffic: async () => MOCK_ADMIN_STATS.traffic,
-    statsActivity: async () => MOCK_ADMIN_STATS.activity,
+    statsUsers: async () => {
+      const userId = getUserId();
+      const res = await fetcher<any>(`/admin/stats/postgres?userId=${userId}`);
+      return {
+        total_users: res.users.total,
+        total_orders: res.orders.total,
+        total_transacted: res.orders.total_revenue,
+        avg_balance: 0
+      };
+    },
+    statsInventory: async () => {
+      const userId = getUserId();
+      const res = await fetcher<any>(`/admin/stats/mongo?userId=${userId}`);
+      return {
+        total_products: res.products.total,
+        by_category: Object.entries(res.products.per_category || {}).map(([category, count]) => ({
+          category,
+          count: count as number
+        })),
+        avg_rating: res.reviews.avg_rating ?? 0,
+        zero_stock: 0
+      };
+    },
+    statsTraffic: async () => {
+      const userId = getUserId();
+      const res = await fetcher<any>(`/admin/stats/redis?userId=${userId}`);
+      return {
+        active_carts: res.keys.cart,
+        cached_searches: res.keys.search
+      };
+    },
+    statsActivity: async () => {
+      const userId = getUserId();
+      return fetcher<ActivityStats>(`/admin/stats/cassandra?userId=${userId}`);
+    },
+    statsLatency: async () => {
+      const userId = getUserId();
+      return fetcher<Record<string, number>>(`/admin/stats/latency?userId=${userId}`);
+    }
   }
 };
 
