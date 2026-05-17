@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ImageUploader } from '@/components/ImageUploader';
 import { Package, Tag, Layers, Settings, FileText, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
+import { toast } from 'react-toastify';
 
 import { CATEGORIES } from '@/lib/constants';
 import { Select } from '@/components/Select';
@@ -36,7 +37,10 @@ export default function Publish() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (images.length === 0) return alert('Pelo menos uma imagem é obrigatória.');
+    if (images.length === 0) {
+      toast.error('Pelo menos uma imagem é obrigatória.');
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -57,10 +61,10 @@ export default function Publish() {
       images.forEach(image => data.append('images', image));
 
       await api.products.create(data);
-      alert('Produto publicado com sucesso!');
+      toast.success('Produto publicado com sucesso!');
       navigate('/my-products');
     } catch (err: any) {
-      alert(err.message || 'Erro ao publicar produto.');
+      toast.error(err.message || 'Erro ao publicar produto.');
     } finally {
       setIsLoading(false);
     }

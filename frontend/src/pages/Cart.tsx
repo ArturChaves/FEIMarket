@@ -6,6 +6,7 @@ import { CartItemRow } from '@/components/CartItemRow';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Trash2, ChevronLeft } from 'lucide-react';
 import { motion } from 'motion/react';
+import { toast } from 'react-toastify';
 
 export default function Cart() {
   const { user } = useAuth();
@@ -35,8 +36,8 @@ export default function Cart() {
     try {
       await api.cart.updateItem(user.id, productId, quantity);
       loadCart();
-    } catch (err) {
-      alert('Erro ao atualizar quantidade.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar quantidade.');
     }
   };
 
@@ -45,8 +46,8 @@ export default function Cart() {
     try {
       await api.cart.removeItem(user.id, productId);
       loadCart();
-    } catch (err) {
-      alert('Erro ao remover item.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao remover item.');
     }
   };
 
@@ -56,8 +57,8 @@ export default function Cart() {
     try {
       await api.cart.clear(user.id);
       setItems([]);
-    } catch (err) {
-      alert('Erro ao limpar carrinho.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao limpar carrinho.');
     }
   };
 

@@ -6,6 +6,7 @@ import { ProductGrid } from '@/components/ProductGrid';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { Link } from 'react-router-dom';
 import { Plus, Package, Info } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function MyProducts() {
   const { user } = useAuth();
@@ -40,14 +41,14 @@ export default function MyProducts() {
     try {
       await api.products.update(id, { userId: user.id, is_active: !product.is_active });
       loadMyProducts();
-    } catch (err) {
-      alert('Erro ao atualizar status do produto.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar status do produto.');
     }
   };
 
   const handleEdit = (id: string) => {
     // Navigate to edit page or open modal
-    alert(`Edição do produto ${id} não implementada - Reutilizaria o form de Publish.`);
+    toast.info(`Edição do produto ${id} não implementada - Reutilizaria o form de Publish.`);
   };
 
   return (

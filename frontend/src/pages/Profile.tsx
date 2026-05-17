@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 type TabType = 'perfil' | 'vendas' | 'compras' | 'seguranca';
 
@@ -76,9 +77,9 @@ export default function Profile() {
     try {
       const { user: updatedUser } = await api.users.updateProfile(user.id, { name, avatar_url: avatar });
       setUser(updatedUser);
-      alert('Perfil atualizado com sucesso!');
-    } catch (err) {
-      alert('Erro ao atualizar perfil.');
+      toast.success('Perfil atualizado com sucesso!');
+    } catch (err: any) {
+      toast.error('Erro ao atualizar perfil.');
     } finally {
       setIsUpdating(false);
     }
@@ -86,7 +87,7 @@ export default function Profile() {
 
   const handleDeleteAccount = () => {
     if (confirm('Tem certeza que deseja deletar sua conta? Esta ação é irreversível.')) {
-      alert('Simulando deleção de conta...');
+      toast.info('Simulando deleção de conta...');
       logout();
       navigate('/');
     }
@@ -96,7 +97,7 @@ export default function Profile() {
     setMyProducts(prev => prev.map(p => 
       p._id === productId ? { ...p, is_active: !p.is_active } : p
     ));
-    alert('Status do produto atualizado!');
+    toast.success('Status do produto atualizado!');
   };
 
   if (isLoading) {

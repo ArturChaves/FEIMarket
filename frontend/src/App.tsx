@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { ProtectedRoute, AdminRoute } from '@/components/ProtectedRoute';
 import { AuthProvider } from '@/hooks/useAuth';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Pages
 import Home from '@/pages/Home';
@@ -39,6 +41,7 @@ export default function App() {
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           </Routes>
+          <ToastContainer position="bottom-right" autoClose={3000} theme="colored" />
         </Layout>
       </Router>
     </AuthProvider>

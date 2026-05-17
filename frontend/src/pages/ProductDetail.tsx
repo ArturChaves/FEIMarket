@@ -7,6 +7,7 @@ import { ReviewCard } from '@/components/ReviewCard';
 import { ReviewForm } from '@/components/ReviewForm';
 import { ShoppingCart, Star, Package, ChevronLeft, ShieldCheck, Truck } from 'lucide-react';
 import { motion } from 'motion/react';
+import { toast } from 'react-toastify';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -43,12 +44,17 @@ export default function ProductDetail() {
     if (!isAuthenticated) return navigate('/auth/login');
     if (!product || !user) return;
     
+    if (user.id === product.seller_id) {
+      toast.error('Você não pode comprar seu próprio produto!');
+      return;
+    }
+    
     setIsAddingToCart(true);
     try {
       await api.cart.addItem(user.id, product._id, 1);
-      alert('Produto adicionado ao carrinho!');
-    } catch (err) {
-      alert('Erro ao adicionar item.');
+      toast.success('Produto adicionado ao carrinho!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao adicionar item.');
     } finally {
       setIsAddingToCart(false);
     }
@@ -60,8 +66,8 @@ export default function ProductDetail() {
     try {
       await api.reviews.create(id, { userId: user.id, rating, comment });
       loadData(); // Refresh reviews
-    } catch (err) {
-      alert('Você só pode avaliar produtos que já comprou.');
+    } catch (err: any) {
+      toast.error(err.message || 'Você só pode avaliar produtos que já comprou.');
     } finally {
       setIsSubmittingReview(false);
     }

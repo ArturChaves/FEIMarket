@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, ArrowRight, CreditCard, Wallet, Lock, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'react-toastify';
 
 export default function Checkout() {
   const { user, setUser } = useAuth();
@@ -33,7 +34,7 @@ export default function Checkout() {
   const handleConfirm = async () => {
     if (!user) return;
     if (!canAfford) {
-      alert('Saldo insuficiente! Venda alguns produtos para aumentar seu saldo.');
+      toast.error('Saldo insuficiente! Venda alguns produtos para aumentar seu saldo.');
       return;
     }
 
@@ -45,7 +46,7 @@ export default function Checkout() {
       setIsSuccess(true);
       setTimeout(() => navigate('/history'), 3000);
     } catch (err: any) {
-      alert(err.message || 'Erro ao processar compra.');
+      toast.error(err.message || 'Erro ao processar compra.');
     } finally {
       setIsProcessing(false);
     }

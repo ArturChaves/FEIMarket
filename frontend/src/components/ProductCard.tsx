@@ -1,7 +1,10 @@
 import { Product } from '@/types';
-import { ShoppingCart, Star } from 'lucide-react';
+import { ShoppingCart, Star, Edit } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/lib/api';
+import { toast } from 'react-toastify';
 
 interface ProductCardProps {
   product: Product;
@@ -13,6 +16,27 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive }: ProductCardProps) => {
   const imageUrl = product.images?.[0] || 'https://via.placeholder.com/300';
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const isOwner = user?.id === product.seller_id;
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent Link navigation
+    if (!user) {
+      navigate('/auth/login');
+      return;
+    }
+    if (user.id === product.seller_id) {
+      toast.error('Você não pode comprar seu próprio produto!');
+      return;
+    }
+    try {
+      await api.cart.addItem(user.id, product._id, 1);
+      toast.success('Produto adicionado ao carrinho!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao adicionar item.');
+    }
+  };
   
   return (
     <motion.div 
@@ -37,7 +61,17 @@ export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive 
       
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{product.category}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{product.category}</span>
+            {isOwner && (
+              <>
+                <span className="text-slate-300">|</span>
+                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                  Meu Produto
+                </span>
+              </>
+            )}
+          </div>
           <div className="flex items-center text-amber-500 text-[10px] font-bold bg-amber-50 px-2 py-0.5 rounded-full">
             <Star className="w-2.5 h-2.5 fill-current mr-1" />
             <span>4.5</span>
@@ -55,12 +89,27 @@ export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive 
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}
           </span>
           
-          <button 
-            className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-            title="Adicionar ao Carrinho"
-          >
-            <ShoppingCart className="w-5 h-5" />
-          </button>
+          {isOwner ? (
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/my-products');
+              }}
+              className="p-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm"
+              title="Gerenciar Produto"
+            >
+              <Edit className="w-5 h-5" />
+            </button>
+          ) : (
+            <button 
+              onClick={handleAddToCart}
+              className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm disabled:opacity-50"
+              title="Adicionar ao Carrinho"
+              disabled={product.stock === 0}
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {showAdminActions && (
