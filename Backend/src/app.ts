@@ -16,6 +16,7 @@ import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
 import cartRoutes from './routes/cart.routes';
 import orderRoutes from './routes/order.routes';
+import usersRoutes from './routes/users.routes';
 
 const app = express();
 const PORT = process.env['PORT'] ?? 4000;
@@ -43,6 +44,7 @@ app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
 app.use('/cart', cartRoutes);
 app.use('/orders', orderRoutes);
+app.use('/users', usersRoutes);
 
 app.use(errorHandler);
 

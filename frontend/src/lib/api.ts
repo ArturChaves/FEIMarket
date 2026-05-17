@@ -71,6 +71,7 @@ export const api = {
       return fetcher<UserProfileResponse>(`/users/${userId}/profile`);
     },
     updateProfile: (userId: string, data: any) => fetcher<{ user: User }>(`/users/${userId}/profile`, { method: 'PUT', body: JSON.stringify(data) }),
+    addBalance: (userId: string, amount: number) => fetcher<{ user: User, message: string }>(`/users/${userId}/add-balance`, { method: 'POST', body: JSON.stringify({ amount }) }),
     uploadAvatar: (userId: string, file: File) => {
       const formData = new FormData();
       formData.append('avatar', file);
