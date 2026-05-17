@@ -6,7 +6,6 @@ dotenv.config();
 export const cassandra = new Client({
   contactPoints: [process.env['CASSANDRA_CONTACT_POINTS'] as string],
   localDataCenter: process.env['CASSANDRA_DATACENTER'] as string,
-  keyspace: process.env['CASSANDRA_KEYSPACE'] as string,
 });
 
 export async function connectCassandra(): Promise<void> {

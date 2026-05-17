@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import { connectMongo } from './config/mongo';
 import { connectCassandra } from './config/cassandra';
 import { redis } from './config/redis';
@@ -14,6 +15,7 @@ import authRoutes from './routes/auth.routes';
 const app = express();
 const PORT = process.env['PORT'] ?? 4000;
 
+app.use(cors());
 app.use(express.json());
 
 app.get('/health', async (_req, res) => {
@@ -39,6 +41,7 @@ async function bootstrap() {
   await connectMongo();
   await connectCassandra();
   await redis.connect();
+  
 
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);

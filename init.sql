@@ -27,6 +27,11 @@ CREATE TABLE users (
 CREATE INDEX idx_users_email ON users (email);
 CREATE INDEX idx_users_role ON users (role);
 
+-- Inserir usuário admin padrão (Senha: admin123)
+INSERT INTO users (name, email, password_hash, role) 
+VALUES ('Administrador', 'admin@admin.com', '$2b$10$Qpvu/QDDacqW/AbY5Z1wfObROqlkJJj6SJYKNPMOFnOPXSK9AxIaS', 'admin')
+ON CONFLICT (email) DO NOTHING;
+
 -- ============================================================
 -- TABELA: orders
 -- Pedidos realizados no marketplace

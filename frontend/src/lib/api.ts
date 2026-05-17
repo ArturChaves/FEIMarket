@@ -7,7 +7,7 @@ import { MOCK_PRODUCTS, MOCK_REVIEWS, MOCK_ADMIN_STATS } from './mocks';
 // Set to true to use mock data instead of real API
 const USE_MOCKS = true;
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const fetcher = async <T>(path: string, options?: RequestInit): Promise<T> => {
   const res = await fetch(`${API_URL}${path}`, {
@@ -29,33 +29,9 @@ const fetcher = async <T>(path: string, options?: RequestInit): Promise<T> => {
 export const api = {
   auth: {
     login: async (body: any) => {
-      if (USE_MOCKS) {
-        return { 
-          user: { 
-            id: 'mock-user-1', 
-            name: body.email === 'admin@email.com' ? 'Administrador' : 'Usuário Teste', 
-            email: body.email, 
-            role: body.email === 'admin@email.com' ? 'admin' : 'client',
-            balance: 1000.00,
-            avatar_url: ''
-          } as unknown as User 
-        };
-      }
       return fetcher<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify(body) });
     },
     register: async (body: any) => {
-      if (USE_MOCKS) {
-        return { 
-          user: { 
-            id: 'mock-user-1', 
-            name: body.name, 
-            email: body.email, 
-            role: 'client',
-            balance: 0.00,
-            avatar_url: ''
-          } as unknown as User 
-        };
-      }
       return fetcher<{ user: User }>('/auth/register', { method: 'POST', body: JSON.stringify(body) });
     },
   },
@@ -151,26 +127,6 @@ export const api = {
   },
   users: {
     profile: async (userId: string) => {
-      if (USE_MOCKS) {
-        return { 
-          user: { 
-            id: userId, 
-            _id: userId, 
-            name: 'Usuário Teste', 
-            email: 'teste@exemplo.com', 
-            role: 'client', 
-            balance: 1250.75, 
-            avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-            is_active: true,
-            created_at: '2023-05-10T10:00:00Z'
-          },
-          activity: {
-            last_login: { logged_at: new Date().toISOString(), ip_address: '192.168.1.1', device: 'Chrome on MacOS' },
-            last_view: { product_name: 'iPhone 15 Pro', price: 8499, viewed_at: new Date().toISOString() },
-            last_purchase: { product_name: 'Kindle Paperwhite', quantity: 1, total: 759, purchased_at: new Date().toISOString() }
-          }
-        };
-      }
       return fetcher<UserProfileResponse>(`/users/${userId}/profile`);
     },
     updateProfile: (userId: string, data: any) => fetcher<{ user: User }>(`/users/${userId}/profile`, { method: 'PUT', body: JSON.stringify(data) }),

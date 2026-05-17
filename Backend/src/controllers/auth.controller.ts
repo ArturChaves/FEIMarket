@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { types } from 'cassandra-driver';
 import { pool } from '../config/postgres';
