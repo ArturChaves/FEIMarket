@@ -6,7 +6,7 @@ import cors from 'cors';
 import { connectMongo } from './config/mongo';
 import { connectCassandra } from './config/cassandra';
 import { redis } from './config/redis';
-import { checkPostgres } from './config/postgres';
+import { checkPostgres, initPostgres } from './config/postgres';
 import { checkMongo } from './config/mongo';
 import { checkRedis } from './config/redis';
 import { checkCassandra } from './config/cassandra';
@@ -56,6 +56,7 @@ async function bootstrap() {
   await connectMongo();
   await connectCassandra();
   await redis.connect();
+  await initPostgres();
   
 
   app.listen(PORT, () => {

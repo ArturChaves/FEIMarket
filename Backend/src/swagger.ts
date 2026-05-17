@@ -610,6 +610,36 @@ export const swaggerSpec: OpenAPIV3.Document = {
       },
     },
 
+    '/users/{userId}/balance': {
+      patch: {
+        tags: ['Usuários'],
+        summary: 'Adicionar saldo ao usuário',
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['amount'],
+                properties: {
+                  amount: { type: 'number', minimum: 0.01, example: 100.00 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Saldo adicionado',
+            content: { 'application/json': { schema: { type: 'object', properties: { message: { type: 'string' }, user: { $ref: '#/components/schemas/User' } } } } },
+          },
+          '400': { description: 'Valor inválido', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+          '404': { description: 'Usuário não encontrado', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+        },
+      },
+    },
+
     '/users/{userId}/avatar': {
       post: {
         tags: ['Usuários'],
