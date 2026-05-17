@@ -51,6 +51,19 @@ export default function MyProducts() {
     navigate(`/products/edit/${id}`);
   };
 
+  const handleDelete = async (id: string) => {
+    if (!user) return;
+    if (!window.confirm('Tem certeza que deseja excluir permanentemente este produto?')) return;
+    
+    try {
+      await api.products.delete(id, user.id);
+      toast.success('Produto excluído com sucesso!');
+      loadMyProducts();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir o produto.');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -109,6 +122,7 @@ export default function MyProducts() {
           showAdminActions={true} 
           onEdit={handleEdit}
           onToggleActive={handleToggleActive}
+          onDelete={handleDelete}
         />
       )}
     </div>

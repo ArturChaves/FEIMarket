@@ -33,6 +33,7 @@ const updateSchema = z.object({
   stock:       z.coerce.number().int().min(0).optional(),
   category:    z.string().min(1).optional(),
   attributes:  z.string().optional(),
+  is_active:   z.coerce.boolean().optional(),
 });
 
 async function uploadFiles(files: Express.Multer.File[]): Promise<string[]> {
@@ -57,12 +58,23 @@ export async function listProducts(query: Record<string, unknown>) {
   const maxPrice = String(query['maxPrice'] ?? '');
   const order    = (query['order'] as SearchOrder) ?? 'time';
   const { page, limit, skip } = parsePaginationParams(query['page'], query['limit']);
+  
+  const sellerId = (query['sellerId'] || query['seller_id']) ? String(query['sellerId'] || query['seller_id']) : '';
 
-  const cacheKey = await productRepository.buildCacheKey(search, category, minPrice, maxPrice, String(page), order);
-  const cached   = await productRepository.getCached(cacheKey);
-  if (cached) return JSON.parse(cached);
+  // Skip cache for seller-specific inventory views
+  if (!sellerId) {
+    const cacheKey = await productRepository.buildCacheKey(search, category, minPrice, maxPrice, String(page), order);
+    const cached   = await productRepository.getCached(cacheKey);
+    if (cached) return JSON.parse(cached);
+  }
 
-  const filter: ProductFilter = { is_active: true };
+  const filter: any = {};
+  if (sellerId) {
+    filter.seller_id = sellerId;
+  } else {
+    filter.is_active = true;
+  }
+
   if (search)   filter.$text    = { $search: search };
   if (category) filter.category = category;
 
@@ -81,7 +93,12 @@ export async function listProducts(query: Record<string, unknown>) {
     : await productRepository.list(filter, sortMap[order] ?? { created_at: -1 }, skip, limit);
 
   const response = { products, total, page, totalPages: Math.ceil(total / limit) };
-  await productRepository.setCached(cacheKey, response);
+  
+  if (!sellerId) {
+    const cacheKey = await productRepository.buildCacheKey(search, category, minPrice, maxPrice, String(page), order);
+    await productRepository.setCached(cacheKey, response);
+  }
+  
   return response;
 }
 
@@ -165,6 +182,15 @@ export async function deleteProduct(id: string, body: unknown) {
   if (!existing) throw new AppError(404, 'Produto não encontrado');
   if (existing.seller_id !== userId) throw new AppError(403, 'Sem permissão para excluir este produto');
 
+  const oldImages = existing.images as string[];
   await productRepository.softDelete(id);
+
+  await Promise.allSettled(
+    oldImages.map(url => {
+      const filename = extractFilename(url);
+      return filename ? minio.removeObject(BUCKET, filename) : Promise.resolve();
+    })
+  );
+
   await productRepository.invalidateSearchCache();
 }

@@ -119,11 +119,20 @@ export default function Profile() {
     }
   };
 
-  const toggleProductStatus = (productId: string) => {
-    setMyProducts(prev => prev.map(p => 
-      p._id === productId ? { ...p, is_active: !p.is_active } : p
-    ));
-    toast.success('Status do produto atualizado!');
+  const toggleProductStatus = async (productId: string) => {
+    if (!user) return;
+    const product = myProducts.find(p => p._id === productId);
+    if (!product) return;
+
+    try {
+      await api.products.update(productId, { userId: user.id, is_active: !product.is_active });
+      setMyProducts(prev => prev.map(p => 
+        p._id === productId ? { ...p, is_active: !p.is_active } : p
+      ));
+      toast.success(product.is_active ? 'Venda pausada com sucesso!' : 'Venda reativada com sucesso!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar status do produto.');
+    }
   };
 
   if (isLoading) {

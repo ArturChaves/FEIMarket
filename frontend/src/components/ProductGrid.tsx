@@ -7,9 +7,10 @@ interface ProductGridProps {
   showAdminActions?: boolean;
   onEdit?: (id: string) => void;
   onToggleActive?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export const ProductGrid = ({ products, emptyMessage, showAdminActions, onEdit, onToggleActive }: ProductGridProps) => {
+export const ProductGrid = ({ products, emptyMessage, showAdminActions, onEdit, onToggleActive, onDelete }: ProductGridProps) => {
   if (products.length === 0) {
     return (
       <div className="py-20 text-center">
@@ -32,6 +33,7 @@ export const ProductGrid = ({ products, emptyMessage, showAdminActions, onEdit, 
           showAdminActions={showAdminActions}
           onEdit={onEdit}
           onToggleActive={onToggleActive}
+          onDelete={onDelete}
         />
       ))}
     </div>

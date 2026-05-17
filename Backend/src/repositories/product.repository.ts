@@ -57,7 +57,7 @@ export const productRepository = {
   },
 
   async findByIdForWrite(id: string) {
-    return Product.findOne({ _id: id, is_active: true });
+    return Product.findOne({ _id: id });
   },
 
   async findByIds(ids: string[]) {
@@ -73,7 +73,7 @@ export const productRepository = {
   },
 
   async softDelete(id: string) {
-    await Product.findByIdAndUpdate(id, { is_active: false });
+    await Product.findByIdAndDelete(id);
   },
 
   async getCached(key: string): Promise<string | null> {

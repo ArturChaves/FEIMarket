@@ -4,7 +4,7 @@ import {
 } from '@/types';
 import { MOCK_ADMIN_STATS } from './mocks';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000';
 
 const fetcher = async <T>(path: string, options?: RequestInit): Promise<T> => {
   const res = await fetch(`${API_URL}${path}`, {

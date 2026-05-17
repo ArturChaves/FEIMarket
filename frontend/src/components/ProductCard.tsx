@@ -1,3 +1,4 @@
+import React from 'react';
 import { Product } from '@/types';
 import { ShoppingCart, Star, Edit } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -11,10 +12,11 @@ interface ProductCardProps {
   showAdminActions?: boolean;
   onEdit?: (id: string) => void;
   onToggleActive?: (id: string) => void;
+  onDelete?: (id: string) => void;
   [key: string]: any; // Allow for other props like key
 }
 
-export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive }: ProductCardProps) => {
+export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive, onDelete }: ProductCardProps) => {
   const imageUrl = product.images?.[0] || 'https://via.placeholder.com/300';
   const { user, refreshCartCount } = useAuth();
   const navigate = useNavigate();
@@ -118,20 +120,26 @@ export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive 
         </div>
 
         {showAdminActions && (
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-3 gap-1.5">
             <button 
               onClick={() => onEdit?.(product._id)}
-              className="py-2 text-[10px] font-bold bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors uppercase tracking-widest"
+              className="py-2 text-[8px] font-black bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors uppercase tracking-widest text-center"
             >
               Editar
             </button>
             <button 
               onClick={() => onToggleActive?.(product._id)}
-              className={`py-2 text-[10px] font-bold rounded-lg transition-colors uppercase tracking-widest ${
-                product.is_active ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+              className={`py-2 text-[8px] font-black rounded-lg transition-colors uppercase tracking-widest text-center ${
+                product.is_active ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
               }`}
             >
-              {product.is_active ? 'Ocultar' : 'Exibir'}
+              {product.is_active ? 'Pausar' : 'Ativar'}
+            </button>
+            <button 
+              onClick={() => onDelete?.(product._id)}
+              className="py-2 text-[8px] font-black bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors uppercase tracking-widest text-center"
+            >
+              Excluir
             </button>
           </div>
         )}

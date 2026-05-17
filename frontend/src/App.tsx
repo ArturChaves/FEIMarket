@@ -42,7 +42,7 @@ export default function App() {
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           </Routes>
-          <ToastContainer position="bottom-right" autoClose={3000} theme="colored" />
+          <ToastContainer position="bottom-right" autoClose={3000} theme="colored" aria-label="toast-notification-container" />
         </Layout>
       </Router>
     </AuthProvider>

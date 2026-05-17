@@ -7,6 +7,7 @@ const router = Router();
 router.get('/:userId/profile',               getProfile);
 router.put('/:userId/profile',               updateProfile);
 router.patch('/:userId/balance',                         addBalance);
+router.post('/:userId/add-balance',                     addBalance);
 router.post('/:userId/avatar',  upload.single('avatar'), uploadAvatar);
 
 export default router;
