@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { ShoppingCart, LogOut, User as UserIcon, LayoutDashboard, PlusCircle, History, Package } from 'lucide-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { SearchBar } from './SearchBar';
 import { motion, AnimatePresence } from 'motion/react';
@@ -10,6 +10,15 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isAdmin, logout, cartCount } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const initialValues = {
+    search: searchParams.get('q') || '',
+    category: searchParams.get('cat') || '',
+    minPrice: searchParams.get('min') || '',
+    maxPrice: searchParams.get('max') || '',
+    sortBy: searchParams.get('sort') || 'recent',
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -27,15 +36,19 @@ export default function Layout({ children }: { children: ReactNode }) {
 
         {/* Center: Search Bar */}
         <div className="flex-1 max-w-2xl px-4">
-          <SearchBar onSearch={(p) => {
-            const params = new URLSearchParams();
-            if (p.search) params.set('q', p.search);
-            if (p.category) params.set('cat', p.category);
-            if (p.minPrice) params.set('min', p.minPrice);
-            if (p.maxPrice) params.set('max', p.maxPrice);
-            if (p.sortBy) params.set('sort', p.sortBy);
-            navigate(`/?${params.toString()}`);
-          }} compact />
+          <SearchBar 
+            onSearch={(p) => {
+              const params = new URLSearchParams();
+              if (p.search) params.set('q', p.search);
+              if (p.category) params.set('cat', p.category);
+              if (p.minPrice) params.set('min', p.minPrice);
+              if (p.maxPrice) params.set('max', p.maxPrice);
+              if (p.sortBy) params.set('sort', p.sortBy);
+              navigate(`/?${params.toString()}`);
+            }} 
+            initialValues={initialValues}
+            compact 
+          />
         </div>
 
         {/* Right: Actions */}

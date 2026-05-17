@@ -56,14 +56,14 @@ export async function listProducts(query: Record<string, unknown>) {
   const category = String(query['category'] ?? '');
   const minPrice = String(query['minPrice'] ?? '');
   const maxPrice = String(query['maxPrice'] ?? '');
-  const order    = (query['order'] as SearchOrder) ?? 'time';
+  const orderRaw = (query['order'] ?? query['sortBy'] ?? query['sort'] ?? 'recent') as SearchOrder;
   const { page, limit, skip } = parsePaginationParams(query['page'], query['limit']);
   
   const sellerId = (query['sellerId'] || query['seller_id']) ? String(query['sellerId'] || query['seller_id']) : '';
 
   // Skip cache for seller-specific inventory views
   if (!sellerId) {
-    const cacheKey = await productRepository.buildCacheKey(search, category, minPrice, maxPrice, String(page), order);
+    const cacheKey = await productRepository.buildCacheKey(search, category, minPrice, maxPrice, String(page), orderRaw);
     const cached   = await productRepository.getCached(cacheKey);
     if (cached) return JSON.parse(cached);
   }
@@ -84,18 +84,24 @@ export async function listProducts(query: Record<string, unknown>) {
   if (priceFilter.$gte !== undefined || priceFilter.$lte !== undefined) filter.price = priceFilter;
 
   const sortMap: Record<string, Record<string, 1 | -1>> = {
-    time:  { created_at: -1 },
-    price: { price: 1 },
+    recent:     { created_at: -1 },
+    time:       { created_at: -1 },
+    oldest:     { created_at: 1 },
+    price_asc:  { price: 1 },
+    price:      { price: 1 },
+    price_desc: { price: -1 },
   };
 
-  const { products, total } = order === 'rating'
+  const isRatingSort = orderRaw === 'rating';
+
+  const { products, total } = isRatingSort
     ? await productRepository.listWithRating(filter, skip, limit)
-    : await productRepository.list(filter, sortMap[order] ?? { created_at: -1 }, skip, limit);
+    : await productRepository.list(filter, sortMap[orderRaw] ?? { created_at: -1 }, skip, limit);
 
   const response = { products, total, page, totalPages: Math.ceil(total / limit) };
   
   if (!sellerId) {
-    const cacheKey = await productRepository.buildCacheKey(search, category, minPrice, maxPrice, String(page), order);
+    const cacheKey = await productRepository.buildCacheKey(search, category, minPrice, maxPrice, String(page), orderRaw);
     await productRepository.setCached(cacheKey, response);
   }
   

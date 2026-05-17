@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, Filter } from 'lucide-react';
 
 interface SearchBarProps {
@@ -17,6 +17,25 @@ export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) 
   const [maxPrice, setMaxPrice] = useState(initialValues?.maxPrice || '');
   const [sortBy, setSortBy] = useState(initialValues?.sortBy || 'recent');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setSearch(initialValues?.search || '');
+    setCategory(initialValues?.category || '');
+    setMinPrice(initialValues?.minPrice || '');
+    setMaxPrice(initialValues?.maxPrice || '');
+    setSortBy(initialValues?.sortBy || 'recent');
+  }, [initialValues]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearch = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
@@ -25,7 +44,7 @@ export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) 
 
   if (compact) {
     return (
-      <div className="relative w-full">
+      <div className="relative w-full" ref={containerRef}>
         <form onSubmit={handleSearch} className="flex bg-slate-100 rounded-xl border border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
           <Select
             value={category}
@@ -111,7 +130,7 @@ export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) 
   }
 
   return (
-    <div id="search-container" className="w-full max-w-4xl mx-auto">
+    <div id="search-container" className="w-full max-w-4xl mx-auto" ref={containerRef}>
       <form onSubmit={handleSearch} className="relative group">
         <div className="flex bg-white rounded-2xl shadow-lg border border-gray-200 ring-offset-2 focus-within:ring-2 focus-within:ring-blue-500 transition-all duration-300">
           <div className="flex items-center pl-5 pointer-events-none text-gray-400">
