@@ -136,7 +136,14 @@ export async function getProduct(id: string, userId?: string) {
     );
   }
 
-  return { product: productWithRating, reviews };
+  const userIds = [...new Set(reviews.map(r => r.user_id))];
+  const userNames = await userRepository.findNamesByIds(userIds);
+  const reviewsWithNames = reviews.map(r => ({
+    ...r,
+    user_name: userNames[r.user_id] || 'Usuário'
+  }));
+
+  return { product: productWithRating, reviews: reviewsWithNames };
 }
 
 export async function createProduct(body: unknown, files: Express.Multer.File[]) {

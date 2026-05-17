@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { reviewRepository } from '../repositories/review.repository';
+import { userRepository } from '../repositories/user.repository';
 
 const createSchema = z.object({
   userId:  z.string().uuid(),
@@ -8,10 +9,21 @@ const createSchema = z.object({
 });
 
 export async function getReviews(productId: string) {
-  return reviewRepository.findByProductId(productId);
+  const reviews = await reviewRepository.findByProductId(productId);
+  const userIds = [...new Set(reviews.map(r => r.user_id))];
+  const userNames = await userRepository.findNamesByIds(userIds);
+  return reviews.map(r => ({
+    ...r,
+    user_name: userNames[r.user_id] || 'Usuário'
+  }));
 }
 
 export async function createReview(productId: string, body: unknown) {
   const { userId, rating, comment } = createSchema.parse(body);
-  return reviewRepository.create(productId, userId, rating, comment);
+  const review = await reviewRepository.create(productId, userId, rating, comment);
+  const userName = await userRepository.findSellerName(userId);
+  return {
+    ...review.toObject(),
+    user_name: userName || 'Usuário'
+  };
 }

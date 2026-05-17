@@ -44,6 +44,19 @@ export const userRepository = {
     return rows[0]?.name ?? null;
   },
 
+  async findNamesByIds(ids: string[]): Promise<Record<string, string>> {
+    if (ids.length === 0) return {};
+    const { rows } = await pool.query<{ id: string; name: string }>(
+      'SELECT id, name FROM users WHERE id = ANY($1::uuid[]) AND is_active = TRUE',
+      [ids]
+    );
+    const mapping: Record<string, string> = {};
+    for (const row of rows) {
+      mapping[row.id] = row.name;
+    }
+    return mapping;
+  },
+
   async create(name: string, email: string, passwordHash: string): Promise<UserRow> {
     const { rows } = await pool.query<UserRow>(
       'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, role, balance, avatar_url',
