@@ -69,6 +69,14 @@ export default function Layout({ children }: { children: ReactNode }) {
                   >
                     <PlusCircle className="w-6 h-6" />
                   </Link>
+
+                  <Link 
+                    to="/my-products" 
+                    className="p-2.5 bg-slate-50 text-slate-500 rounded-xl hover:bg-slate-100 hover:text-indigo-600 transition-colors shadow-sm"
+                    title="Meus Produtos"
+                  >
+                    <Package className="w-6 h-6" />
+                  </Link>
                   
                   <Link 
                     to="/cart" 

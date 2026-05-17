@@ -42,8 +42,11 @@ export const api = {
     },
     create: (formData: FormData) => 
       fetcher<{ product: Product }>('/products', { method: 'POST', body: formData }),
-    update: (id: string, body: any) => 
-      fetcher<{ product: Product }>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    update: (id: string, body: FormData | any) => 
+      fetcher<{ product: Product }>(`/products/${id}`, { 
+        method: 'PUT', 
+        body: body instanceof FormData ? body : JSON.stringify(body) 
+      }),
     delete: (id: string, userId: string) => 
       fetcher<{ message: string }>(`/products/${id}`, { method: 'DELETE', body: JSON.stringify({ userId }) }),
   },

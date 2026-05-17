@@ -93,16 +93,18 @@ export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive 
           </span>
           
           {isOwner ? (
-            <button 
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/my-products');
-              }}
-              className="p-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm"
-              title="Gerenciar Produto"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
+            !showAdminActions && (
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/my-products');
+                }}
+                className="p-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm"
+                title="Gerenciar Produto"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+            )
           ) : (
             <button 
               onClick={handleAddToCart}

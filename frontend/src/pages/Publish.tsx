@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ImageUploader } from '@/components/ImageUploader';
 import { Package, Tag, Layers, Settings, FileText, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -13,7 +13,50 @@ import { Select } from '@/components/Select';
 export default function Publish() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = !!id;
   const [isLoading, setIsLoading] = useState(false);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!id || !user) return;
+    const fetchProduct = async () => {
+      setIsLoading(true);
+      try {
+        const data = await api.products.getById(id);
+        const prod = data.product;
+        // Verify owner
+        if (prod.seller_id !== user.id) {
+          toast.error('Você não tem permissão para editar este produto.');
+          navigate('/my-products');
+          return;
+        }
+        setFormData({
+          title: prod.title,
+          description: prod.description,
+          price: prod.price.toString(),
+          stock: prod.stock.toString(),
+          category: prod.category,
+        });
+        setExistingImages(prod.images || []);
+        
+        // Convert attributes object to key-value array
+        if (prod.attributes) {
+          const attrsArray = Object.entries(prod.attributes).map(([key, value]) => ({
+            key,
+            value: String(value),
+          }));
+          setAttributes(attrsArray);
+        }
+      } catch (err: any) {
+        toast.error(err.message || 'Erro ao carregar dados do produto.');
+        navigate('/my-products');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [id, user, navigate]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -37,7 +80,7 @@ export default function Publish() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (images.length === 0) {
+    if (!isEditMode && images.length === 0) {
       toast.error('Pelo menos uma imagem é obrigatória.');
       return;
     }
@@ -60,11 +103,16 @@ export default function Publish() {
       
       images.forEach(image => data.append('images', image));
 
-      await api.products.create(data);
-      toast.success('Produto publicado com sucesso!');
+      if (isEditMode && id) {
+        await api.products.update(id, data);
+        toast.success('Produto atualizado com sucesso!');
+      } else {
+        await api.products.create(data);
+        toast.success('Produto publicado com sucesso!');
+      }
       navigate('/my-products');
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao publicar produto.');
+      toast.error(err.message || 'Erro ao salvar produto.');
     } finally {
       setIsLoading(false);
     }
@@ -74,8 +122,12 @@ export default function Publish() {
     <div className="max-w-4xl mx-auto px-4 py-12">
       <div className="mb-10 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-display font-extrabold text-gray-900 tracking-tight">Anunciar Produto</h1>
-          <p className="text-gray-500 font-medium mt-1">Crie um anúncio de destaque e alcance milhares de compradores.</p>
+          <h1 className="text-4xl font-display font-extrabold text-gray-900 tracking-tight">
+            {isEditMode ? 'Editar Produto' : 'Anunciar Produto'}
+          </h1>
+          <p className="text-gray-500 font-medium mt-1">
+            {isEditMode ? 'Atualize as especificações e o estoque do seu recurso acadêmico.' : 'Crie um anúncio de destaque e alcance milhares de compradores.'}
+          </p>
         </div>
         <div className="hidden sm:flex items-center gap-2 text-xs font-bold bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full border border-indigo-100 uppercase tracking-widest">
           <Sparkles className="w-4 h-4" /> Destaque Garantido
@@ -202,6 +254,23 @@ export default function Publish() {
             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-6">
               <PlusCircle className="w-6 h-6 text-blue-600" /> Galeria de Imagens
             </h3>
+            
+            {isEditMode && existingImages.length > 0 && (
+              <div className="mb-6 p-6 bg-slate-50 border border-slate-100 rounded-2xl">
+                <h4 className="font-bold text-slate-700 text-sm mb-3">Imagens Atuais</h4>
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {existingImages.map((img, i) => (
+                    <div key={i} className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 shrink-0 shadow-sm bg-white">
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2 font-medium">
+                  *Nota: Enviar novas imagens na galeria abaixo irá substituir as imagens atuais deste produto.
+                </p>
+              </div>
+            )}
+
             <ImageUploader onImagesChange={setImages} />
           </div>
         </div>
@@ -223,7 +292,7 @@ export default function Publish() {
               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <>
-                Confirmar e Publicar
+                {isEditMode ? 'Salvar Alterações' : 'Confirmar e Publicar'}
                 <CheckCircle2 className="w-6 h-6" />
               </>
             )}

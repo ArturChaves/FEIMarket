@@ -34,6 +34,7 @@ export default function App() {
             <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             <Route path="/publish" element={<ProtectedRoute><Publish /></ProtectedRoute>} />
+            <Route path="/products/edit/:id" element={<ProtectedRoute><Publish /></ProtectedRoute>} />
             <Route path="/my-products" element={<ProtectedRoute><MyProducts /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />

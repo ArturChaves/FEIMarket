@@ -5,7 +5,7 @@ import { Product, Review } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { ReviewCard } from '@/components/ReviewCard';
 import { ReviewForm } from '@/components/ReviewForm';
-import { ShoppingCart, Star, Package, ChevronLeft, ShieldCheck, Truck } from 'lucide-react';
+import { ShoppingCart, Star, Package, ChevronLeft, ShieldCheck, Truck, Edit } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'react-toastify';
 
@@ -167,14 +167,24 @@ export default function ProductDetail() {
           </div>
 
           <div className="flex gap-4">
-            <button 
-              onClick={handleAddToCart}
-              disabled={isAddingToCart || product.stock === 0}
-              className="flex-grow py-5 bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              <ShoppingCart className="w-6 h-6" />
-              {isAddingToCart ? 'Adicionando...' : 'Adicionar ao Carrinho'}
-            </button>
+            {user?.id === product.seller_id ? (
+              <button 
+                onClick={() => navigate(`/products/edit/${product._id}`)}
+                className="flex-grow py-5 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all active:scale-[0.98]"
+              >
+                <Edit className="w-6 h-6" />
+                Editar Meu Produto
+              </button>
+            ) : (
+              <button 
+                onClick={handleAddToCart}
+                disabled={isAddingToCart || product.stock === 0}
+                className="flex-grow py-5 bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-[0.98] disabled:opacity-50"
+              >
+                <ShoppingCart className="w-6 h-6" />
+                {isAddingToCart ? 'Adicionando...' : 'Adicionar ao Carrinho'}
+              </button>
+            )}
           </div>
 
           <div className="mt-12">

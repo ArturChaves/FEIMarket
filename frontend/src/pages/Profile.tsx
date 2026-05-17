@@ -352,7 +352,11 @@ export default function Profile() {
                             <p className="font-black text-slate-700">{p.units_sold || 0}</p>
                           </div>
                           <div className="flex gap-2">
-                            <button className="p-2 bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                            <button 
+                              onClick={() => navigate(`/products/edit/${p._id}`)}
+                              className="p-2 bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                              title="Editar Produto"
+                            >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 
