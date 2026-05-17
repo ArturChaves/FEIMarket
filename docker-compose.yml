@@ -213,6 +213,7 @@ services:
       dockerfile: Dockerfile
     container_name: marketplace_backend
     restart: unless-stopped
+    command: npm run dev
     environment:
       NODE_ENV: development
       PORT: 4000
@@ -254,18 +255,17 @@ services:
   #   container_name: marketplace_frontend
   #   restart: unless-stopped
   #   environment:
-  #     NEXT_PUBLIC_API_URL: http://localhost:4000
-  #     NEXT_PUBLIC_MINIO_URL: http://localhost:9000
+  #     VITE_API_URL: http://localhost:4000
+  #     VITE_MINIO_URL: http://localhost:9000
   #   ports:
   #     - "3000:3000"
   #   volumes:
   #     - ./frontend:/app
   #     - /app/node_modules
-  #     - /app/.next
   #   networks:
   #     - marketplace_net
-  #   depends_on:
-  #     - backend
+  #   # depends_on:
+  #   #   - backend
 
 # ============================================================
 # VOLUMES
