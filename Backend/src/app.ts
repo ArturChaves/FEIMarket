@@ -16,6 +16,9 @@ import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
 import cartRoutes from './routes/cart.routes';
 import orderRoutes from './routes/order.routes';
+import reviewRoutes from './routes/review.routes';
+import userRoutes from './routes/user.routes';
+import adminRoutes from './routes/admin.routes';
 
 const app = express();
 const PORT = process.env['PORT'] ?? 4000;
@@ -41,8 +44,11 @@ app.get('/health', async (_req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
+app.use('/products/:id/reviews', reviewRoutes);
 app.use('/cart', cartRoutes);
 app.use('/orders', orderRoutes);
+app.use('/users', userRoutes);
+app.use('/admin', adminRoutes);
 
 app.use(errorHandler);
 
