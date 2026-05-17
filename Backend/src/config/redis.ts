@@ -1,9 +1,7 @@
 import IORedis from 'ioredis';
-import dotenv from 'dotenv';
+import { requireEnv } from '../utils/env';
 
-dotenv.config();
-
-export const redis = new IORedis(process.env['REDIS_URL'] as string, {
+export const redis = new IORedis(requireEnv('REDIS_URL'), {
   lazyConnect: true,
   maxRetriesPerRequest: 3,
 });

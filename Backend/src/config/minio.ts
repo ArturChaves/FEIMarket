@@ -1,14 +1,12 @@
 import * as Minio from 'minio';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { requireEnv } from '../utils/env';
 
 export const minio = new Minio.Client({
-  endPoint: process.env['MINIO_ENDPOINT'] as string,
-  port: parseInt(process.env['MINIO_PORT'] as string),
-  useSSL: process.env['MINIO_USE_SSL'] === 'true',
-  accessKey: process.env['MINIO_ACCESS_KEY'] as string,
-  secretKey: process.env['MINIO_SECRET_KEY'] as string,
+  endPoint:  requireEnv('MINIO_ENDPOINT'),
+  port:      parseInt(requireEnv('MINIO_PORT'), 10),
+  useSSL:    requireEnv('MINIO_USE_SSL') === 'true',
+  accessKey: requireEnv('MINIO_ACCESS_KEY'),
+  secretKey: requireEnv('MINIO_SECRET_KEY'),
 });
 
 export async function checkMinio(): Promise<string> {
