@@ -102,7 +102,13 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500 overflow-hidden ring-2 ring-white shadow-sm">
                   {user?.avatar_url ? (
                     <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-                  ) : user?.name.charAt(0)}
+                  ) : (
+                    <img 
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.name || '')}`} 
+                      alt={user?.name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  )}
                 </div>
               </button>
 

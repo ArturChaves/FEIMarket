@@ -15,13 +15,7 @@ import { toast } from 'react-toastify';
 
 type TabType = 'perfil' | 'vendas' | 'compras' | 'seguranca';
 
-const AVATARS = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Scooter',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Aria',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Loki',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Willow'
-];
+
 
 export default function Profile() {
   const { user, setUser, logout } = useAuth();
@@ -39,6 +33,34 @@ export default function Profile() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Avatar Upload States
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione uma imagem válida.');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const res = await api.users.uploadAvatar(user.id, file);
+      setAvatar(res.avatar_url);
+      
+      // Update global context with new avatar url
+      setUser({ ...user, avatar_url: res.avatar_url });
+      
+      toast.success('Imagem do perfil atualizada com sucesso!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao enviar a imagem.');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
   
   // Dashboard State
   const [myProducts, setMyProducts] = useState<Product[]>([]);
@@ -101,7 +123,7 @@ export default function Profile() {
         const data = await api.users.profile(user.id);
         setProfileData(data);
         setName(data.user.name);
-        setAvatar(data.user.avatar_url || AVATARS[0]);
+        setAvatar(data.user.avatar_url || 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(data.user.name));
         
         // Load Seller Products
         const productsData = await api.products.list({ seller_id: user.id, limit: 100 });
@@ -285,21 +307,45 @@ export default function Profile() {
                 </h3>
 
                 <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Escolha seu Avatar</label>
-                    <div className="flex flex-wrap gap-4">
-                      {AVATARS.map((av) => (
-                        <button
-                          key={av}
-                          type="button"
-                          onClick={() => setAvatar(av)}
-                          className={`w-14 h-14 rounded-2xl overflow-hidden ring-4 transition-all ${
-                            avatar === av ? 'ring-indigo-600 scale-110' : 'ring-transparent opacity-60 hover:opacity-100'
-                          }`}
-                        >
-                          <img src={av} alt="Avatar option" className="w-full h-full object-cover" />
-                        </button>
-                      ))}
+                  <div className="md:col-span-2 flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-slate-100">
+                    <div className="relative group w-24 h-24 rounded-[2rem] overflow-hidden shrink-0 ring-4 ring-indigo-50">
+                      <img 
+                        src={avatar} 
+                        alt="Avatar do Usuário" 
+                        className="w-full h-full object-cover transition-all group-hover:scale-110" 
+                      />
+                      {isUploadingAvatar ? (
+                        <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center">
+                          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : (
+                        <label className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-all">
+                          <Camera className="w-6 h-6 text-white" />
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={handleAvatarChange} 
+                          />
+                        </label>
+                      )}
+                    </div>
+                    <div className="text-center sm:text-left space-y-2">
+                      <h4 className="font-display font-bold text-slate-800 text-base">Foto do Perfil</h4>
+                      <p className="text-slate-400 text-xs font-medium max-w-sm">
+                        Clique na imagem acima ou no botão abaixo para fazer upload de um arquivo PNG ou JPG (máximo 5MB).
+                      </p>
+                      <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer transition-all">
+                        <Camera className="w-3.5 h-3.5" />
+                        Fazer Upload
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={handleAvatarChange} 
+                          disabled={isUploadingAvatar}
+                        />
+                      </label>
                     </div>
                   </div>
 

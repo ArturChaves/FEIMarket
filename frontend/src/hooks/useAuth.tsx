@@ -58,6 +58,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, refreshCartCount]);
 
+  const handleSetUser = useCallback((newUserData: User | null) => {
+    if (newUserData) {
+      localStorage.setItem('user', JSON.stringify(newUserData));
+    } else {
+      localStorage.removeItem('user');
+    }
+    setUser(newUserData);
+  }, []);
+
   const login = useCallback((userData: User) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
@@ -74,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ 
-      user, login, logout, isAuthenticated, isAdmin, isLoading, setUser,
+      user, login, logout, isAuthenticated, isAdmin, isLoading, setUser: handleSetUser,
       cartCount, setCartCount, refreshCartCount 
     }}>
       {children}
