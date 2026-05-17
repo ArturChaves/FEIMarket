@@ -1,10 +1,8 @@
 import { Pool } from 'pg';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { requireEnv } from '../utils/env';
 
 export const pool = new Pool({
-  connectionString: process.env['DATABASE_URL'],
+  connectionString: requireEnv('DATABASE_URL'),
 });
 
 export async function checkPostgres(): Promise<string> {

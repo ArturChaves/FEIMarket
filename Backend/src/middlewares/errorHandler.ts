@@ -1,11 +1,12 @@
 import type { Request, Response, NextFunction } from 'express';
 
 export function errorHandler(
-  err: Error,
+  err: unknown,
   _req: Request,
   res: Response,
   _next: NextFunction
 ): void {
-  console.error(err.stack);
-  res.status(500).json({ error: err.message ?? 'Erro interno do servidor' });
+  const message = err instanceof Error ? err.message : 'Erro interno do servidor';
+  console.error(err);
+  res.status(500).json({ error: message });
 }

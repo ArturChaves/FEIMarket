@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { requireEnv } from '../utils/env';
 
 export async function connectMongo(): Promise<void> {
-  await mongoose.connect(process.env['MONGODB_URI'] as string);
+  await mongoose.connect(requireEnv('MONGODB_URI'));
 }
 
 export async function checkMongo(): Promise<string> {

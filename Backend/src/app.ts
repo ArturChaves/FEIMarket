@@ -10,6 +10,7 @@ import { checkCassandra } from './config/cassandra';
 import { checkMinio } from './config/minio';
 import { errorHandler } from './middlewares/errorHandler';
 import authRoutes from './routes/auth.routes';
+import productRoutes from './routes/product.routes';
 
 const app = express();
 const PORT = process.env['PORT'] ?? 4000;
@@ -32,6 +33,7 @@ app.get('/health', async (_req, res) => {
 });
 
 app.use('/auth', authRoutes);
+app.use('/products', productRoutes);
 
 app.use(errorHandler);
 
