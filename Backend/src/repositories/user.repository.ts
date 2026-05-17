@@ -1,4 +1,14 @@
 import { pool } from '../config/postgres';
+import { requireEnv } from '../utils/env';
+
+const MINIO_URL = requireEnv('MINIO_PUBLIC_URL');
+const AVATAR_BUCKET = 'marketplace-avatars';
+
+function getFullAvatarUrl(avatar_url: string | null): string | null {
+  if (!avatar_url) return null;
+  if (avatar_url.startsWith('http://') || avatar_url.startsWith('https://')) return avatar_url;
+  return `${MINIO_URL}/${AVATAR_BUCKET}/${avatar_url}`;
+}
 
 export interface UserRow {
   id: string;
@@ -25,7 +35,11 @@ export const userRepository = {
       'SELECT id, name, email, role, balance, avatar_url FROM users WHERE id = $1 AND is_active = TRUE',
       [id]
     );
-    return rows[0] ?? null;
+    const user = rows[0] ?? null;
+    if (user) {
+      user.avatar_url = getFullAvatarUrl(user.avatar_url);
+    }
+    return user;
   },
 
   async findByEmail(email: string): Promise<UserAuthRow | null> {
@@ -33,7 +47,11 @@ export const userRepository = {
       'SELECT id, name, email, role, balance, avatar_url, password_hash, is_active FROM users WHERE email = $1',
       [email]
     );
-    return rows[0] ?? null;
+    const user = rows[0] ?? null;
+    if (user) {
+      user.avatar_url = getFullAvatarUrl(user.avatar_url);
+    }
+    return user;
   },
 
   async findSellerName(id: string): Promise<string | null> {
@@ -63,7 +81,9 @@ export const userRepository = {
       [name, email, passwordHash]
     );
     if (!rows[0]) throw new Error('Falha ao criar usuário');
-    return rows[0];
+    const user = rows[0];
+    user.avatar_url = getFullAvatarUrl(user.avatar_url);
+    return user;
   },
 
   async update(id: string, fields: { name?: string; email?: string; password_hash?: string }): Promise<UserRow | null> {
@@ -79,7 +99,11 @@ export const userRepository = {
       `UPDATE users SET ${setClauses.join(', ')} WHERE id = $${idx} AND is_active = TRUE RETURNING id, name, email, role, balance, avatar_url`,
       values
     );
-    return rows[0] ?? null;
+    const user = rows[0] ?? null;
+    if (user) {
+      user.avatar_url = getFullAvatarUrl(user.avatar_url);
+    }
+    return user;
   },
 
   async addBalance(id: string, amount: number): Promise<UserRow | null> {
@@ -87,7 +111,11 @@ export const userRepository = {
       'UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND is_active = TRUE RETURNING id, name, email, role, balance, avatar_url',
       [amount, id]
     );
-    return rows[0] ?? null;
+    const user = rows[0] ?? null;
+    if (user) {
+      user.avatar_url = getFullAvatarUrl(user.avatar_url);
+    }
+    return user;
   },
 
   async updateAvatarUrl(id: string, avatarUrl: string): Promise<void> {

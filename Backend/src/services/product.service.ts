@@ -37,18 +37,34 @@ const updateSchema = z.object({
 });
 
 async function uploadFiles(files: Express.Multer.File[]): Promise<string[]> {
-  const urls: string[] = [];
+  const filenames: string[] = [];
   for (const file of files) {
     const filename = `${crypto.randomUUID()}${path.extname(file.originalname)}`;
     await minio.putObject(BUCKET, filename, file.buffer, file.size, { 'Content-Type': file.mimetype });
-    urls.push(`${MINIO_URL}/${BUCKET}/${filename}`);
+    filenames.push(filename);
   }
-  return urls;
+  return filenames;
 }
 
 function extractFilename(url: string): string {
   const prefix = `${MINIO_URL}/${BUCKET}/`;
-  return url.startsWith(prefix) ? url.slice(prefix.length) : '';
+  return url.startsWith(prefix) ? url.slice(prefix.length) : url;
+}
+
+function getFullImageUrl(filename: string): string {
+  if (!filename) return '';
+  if (filename.startsWith('http://') || filename.startsWith('https://')) return filename;
+  return `${MINIO_URL}/${BUCKET}/${filename}`;
+}
+
+function mapProductImages<T extends { images?: string[]; toObject?: any } | null>(product: T): T {
+  if (!product) return product;
+  const rawProduct = typeof product.toObject === 'function' ? product.toObject() : product;
+  const images = (rawProduct.images || []).map((img: string) => getFullImageUrl(img));
+  return {
+    ...rawProduct,
+    images
+  };
 }
 
 export async function listProducts(query: Record<string, unknown>) {
@@ -98,7 +114,8 @@ export async function listProducts(query: Record<string, unknown>) {
     ? await productRepository.listWithRating(filter, skip, limit)
     : await productRepository.list(filter, sortMap[orderRaw] ?? { created_at: -1 }, skip, limit);
 
-  const response = { products, total, page, totalPages: Math.ceil(total / limit) };
+  const mappedProducts = products.map(p => mapProductImages(p));
+  const response = { products: mappedProducts, total, page, totalPages: Math.ceil(total / limit) };
   
   if (!sellerId) {
     const cacheKey = await productRepository.buildCacheKey(search, category, minPrice, maxPrice, String(page), orderRaw);
@@ -123,7 +140,7 @@ export async function getProduct(id: string, userId?: string) {
     : 0;
 
   const productWithRating = {
-    ...product,
+    ...mapProductImages(product),
     rating: Math.round(avgRating * 10) / 10
   };
 
@@ -165,7 +182,7 @@ export async function createProduct(body: unknown, files: Express.Multer.File[])
   });
 
   await productRepository.invalidateSearchCache();
-  return product;
+  return mapProductImages(product);
 }
 
 export async function updateProduct(id: string, body: unknown, files: Express.Multer.File[]) {
@@ -194,7 +211,7 @@ export async function updateProduct(id: string, body: unknown, files: Express.Mu
   );
 
   await productRepository.invalidateSearchCache();
-  return product;
+  return mapProductImages(product);
 }
 
 export async function deleteProduct(id: string, body: unknown) {

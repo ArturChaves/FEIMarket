@@ -66,11 +66,11 @@ export async function uploadAvatar(userId: string, file: Express.Multer.File) {
   await minio.putObject(BUCKET, filename, file.buffer, file.size, { 'Content-Type': file.mimetype });
   const avatar_url = `${MINIO_URL}/${BUCKET}/${filename}`;
 
-  await userRepository.updateAvatarUrl(userId, avatar_url);
+  await userRepository.updateAvatarUrl(userId, filename);
 
   if (user.avatar_url) {
     const prefix      = `${MINIO_URL}/${BUCKET}/`;
-    const oldFilename = user.avatar_url.startsWith(prefix) ? user.avatar_url.slice(prefix.length) : '';
+    const oldFilename = user.avatar_url.startsWith(prefix) ? user.avatar_url.slice(prefix.length) : user.avatar_url;
     if (oldFilename) await minio.removeObject(BUCKET, oldFilename).catch(() => undefined);
   }
 
