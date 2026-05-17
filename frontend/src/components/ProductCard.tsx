@@ -16,7 +16,7 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive }: ProductCardProps) => {
   const imageUrl = product.images?.[0] || 'https://via.placeholder.com/300';
-  const { user } = useAuth();
+  const { user, refreshCartCount } = useAuth();
   const navigate = useNavigate();
   const isOwner = user?.id === product.seller_id;
 
@@ -32,6 +32,9 @@ export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive 
     }
     try {
       await api.cart.addItem(user.id, product._id, 1);
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
       toast.success('Produto adicionado ao carrinho!');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao adicionar item.');

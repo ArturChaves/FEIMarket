@@ -12,7 +12,7 @@ import { toast } from 'react-toastify';
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, refreshCartCount } = useAuth();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -52,6 +52,9 @@ export default function ProductDetail() {
     setIsAddingToCart(true);
     try {
       await api.cart.addItem(user.id, product._id, 1);
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
       toast.success('Produto adicionado ao carrinho!');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao adicionar item.');

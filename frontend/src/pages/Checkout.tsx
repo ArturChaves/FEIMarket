@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-toastify';
 
 export default function Checkout() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, refreshCartCount } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -61,6 +61,9 @@ export default function Checkout() {
       await api.orders.checkout(user.id);
       // Update local balance
       setUser({ ...user, balance: user.balance - total });
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
       setIsSuccess(true);
     } catch (err: any) {
       toast.error(err.message || 'Erro ao processar compra.');
