@@ -127,5 +127,21 @@ export async function checkout(body: unknown) {
 }
 
 export async function getOrders(userId: string) {
-  return orderRepository.findByUserId(userId);
+  const orders = await orderRepository.findByUserId(userId);
+  const productIds = Array.from(new Set(orders.flatMap(o => o.items.map(i => i.product_id))));
+  
+  if (productIds.length > 0) {
+    const products = await Product.find({ _id: { $in: productIds } }).lean();
+    const productMap = new Map(products.map(p => [String(p._id), p]));
+    
+    for (const order of orders) {
+      for (const item of order.items) {
+        const prod = productMap.get(item.product_id);
+        if (prod && prod.images && prod.images.length > 0) {
+          (item as any).product_image = prod.images[0];
+        }
+      }
+    }
+  }
+  return orders;
 }

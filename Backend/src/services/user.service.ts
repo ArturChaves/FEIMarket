@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { types } from 'cassandra-driver';
-import crypto from 'crypto';
 import path from 'path';
+import bcrypt from 'bcryptjs';
 import { userRepository } from '../repositories/user.repository';
 import { cassandraRepository } from '../repositories/cassandra.repository';
 import { minio } from '../config/minio';
@@ -14,6 +14,7 @@ const MINIO_URL = requireEnv('MINIO_PUBLIC_URL');
 const updateSchema = z.object({
   name:  z.string().min(1).optional(),
   email: z.string().email().optional(),
+  password: z.string().min(6).optional(),
 });
 
 export async function getProfile(userId: string) {
@@ -35,9 +36,16 @@ export async function getProfile(userId: string) {
 
 export async function updateProfile(userId: string, body: unknown) {
   const fields = updateSchema.parse(body);
-  if (!fields.name && !fields.email) throw new AppError(400, 'Informe ao menos um campo para atualizar');
+  if (!fields.name && !fields.email && !fields.password) throw new AppError(400, 'Informe ao menos um campo para atualizar');
 
-  const user = await userRepository.update(userId, fields);
+  const repoFields: { name?: string; email?: string; password_hash?: string } = {};
+  if (fields.name) repoFields.name = fields.name;
+  if (fields.email) repoFields.email = fields.email;
+  if (fields.password) {
+    repoFields.password_hash = await bcrypt.hash(fields.password, 10);
+  }
+
+  const user = await userRepository.update(userId, repoFields);
   if (!user) throw new AppError(404, 'Usuário não encontrado');
 
   return { user: { ...user, balance: parseFloat(user.balance) } };

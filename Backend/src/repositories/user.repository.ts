@@ -53,12 +53,13 @@ export const userRepository = {
     return rows[0];
   },
 
-  async update(id: string, fields: { name?: string; email?: string }): Promise<UserRow | null> {
+  async update(id: string, fields: { name?: string; email?: string; password_hash?: string }): Promise<UserRow | null> {
     const setClauses: string[] = [];
     const values: unknown[]    = [];
     let idx = 1;
     if (fields.name)  { setClauses.push(`name = $${idx++}`);  values.push(fields.name); }
     if (fields.email) { setClauses.push(`email = $${idx++}`); values.push(fields.email); }
+    if (fields.password_hash) { setClauses.push(`password_hash = $${idx++}`); values.push(fields.password_hash); }
     setClauses.push('updated_at = NOW()');
     values.push(id);
     const { rows } = await pool.query<UserRow>(

@@ -33,8 +33,12 @@ export default function Profile() {
   
   // Form States
   const [name, setName] = useState('');
-  const [password, setPassword] = useState('********');
   const [avatar, setAvatar] = useState('');
+  
+  // Password Change States
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   
   // Dashboard State
   const [myProducts, setMyProducts] = useState<Product[]>([]);
@@ -66,6 +70,30 @@ export default function Profile() {
     }
   };
 
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (newPassword.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem.');
+      return;
+    }
+    setIsUpdatingPassword(true);
+    try {
+      await api.users.updateProfile(user.id, { password: newPassword });
+      toast.success('Senha atualizada com sucesso!');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar senha.');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return;
@@ -81,11 +109,13 @@ export default function Profile() {
         const userProducts = productsData.products.filter(p => p.seller_id === user.id || p.seller_id === 'seller1');
         setMyProducts(userProducts);
 
-        // Load History Mock
-        setMyOrders([
-          { id: 'ORD-1234', title: 'MacBook Pro 14"', date: '2024-03-01', status: 'Entregue', price: 12499, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=100' },
-          { id: 'ORD-5678', title: 'iPhone 15 Pro', date: '2024-02-15', status: 'Processando', price: 8499, image: 'https://images.unsplash.com/photo-1695048133142-1a20484d251e?auto=format&fit=crop&q=80&w=100' }
-        ]);
+        // Load Orders History from the API
+        try {
+          const ordersData = await api.orders.list(user.id);
+          setMyOrders(ordersData.orders || []);
+        } catch (orderErr) {
+          console.error('Failed to load order history', orderErr);
+        }
 
       } catch (err) {
         console.error('Failed to load profile', err);
@@ -293,20 +323,7 @@ export default function Profile() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Sua Senha</label>
-                    <div className="relative">
-                      <input
-                        type="password"
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none font-bold text-slate-700 transition-all"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                      <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+
 
                   <div className="md:col-span-2 flex justify-end">
                     <button
@@ -408,29 +425,72 @@ export default function Profile() {
                 className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8"
               >
                 <h3 className="text-2xl font-display font-black text-slate-900 mb-8">Histórico de Pedidos</h3>
-                <div className="space-y-4">
-                  {myOrders.map(order => (
-                    <div key={order.id} className="flex items-center gap-6 p-4 rounded-2xl border border-slate-50 hover:bg-slate-50 transition-colors group">
-                      <img src={order.image} alt="" className="w-16 h-16 rounded-xl object-cover bg-slate-100" />
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
+                {myOrders.length === 0 ? (
+                  <div className="py-20 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                    <ShoppingBag className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                    <p className="font-bold text-slate-400">Você não realizou nenhuma compra ainda.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {myOrders.map(order => (
+                      <div key={order.id} className="bg-slate-50 rounded-[2rem] border border-slate-100 p-6 space-y-4 hover:border-indigo-200 transition-all duration-300">
+                        {/* Order Header */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-slate-200/60">
                           <div>
-                            <h4 className="font-bold text-slate-900">{order.title}</h4>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Pedido: {order.id}</p>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">ID do Pedido</span>
+                            <h4 className="font-display font-bold text-slate-900 text-sm truncate max-w-xs">{order.id}</h4>
                           </div>
-                          <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase">
-                            {order.status}
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-wider">
+                              Pago
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-400">
+                              {order.created_at ? format(new Date(order.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Order Items */}
+                        <div className="space-y-3">
+                          {order.items?.map((item: any) => (
+                            <div key={item.id} className="flex items-center gap-4 py-2">
+                              <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 overflow-hidden border border-slate-100">
+                                {item.product_image ? (
+                                  <img 
+                                    src={item.product_image} 
+                                    alt={item.product_name} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                ) : (
+                                  <ShoppingBag className="w-6 h-6" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-bold text-slate-800 text-sm truncate">{item.product_name}</h5>
+                                <p className="text-xs text-slate-400 font-medium">
+                                  Qtd: {item.quantity} × R$ {item.unit_price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-black text-slate-800 text-sm">
+                                  R$ {item.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Order Footer */}
+                        <div className="flex justify-between items-center pt-4 border-t border-slate-200/60">
+                          <span className="text-xs font-bold text-slate-500">Total do Pedido</span>
+                          <span className="text-indigo-600 font-display font-black text-xl">
+                            R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-indigo-600 font-black text-lg">R$ {order.price.toLocaleString()}</p>
-                        <p className="text-[10px] font-bold text-slate-400 mt-1">{order.date}</p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-600 transition-colors" />
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -440,48 +500,80 @@ export default function Profile() {
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8"
+                className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 md:p-12 space-y-8"
               >
-                <h3 className="text-2xl font-display font-black text-slate-900 mb-8 flex items-center gap-3">
+                <h3 className="text-2xl font-display font-black text-slate-900 flex items-center gap-3">
                   <div className="w-8 h-8 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
                     <Shield className="w-4 h-4" />
                   </div>
                   Segurança da Conta
                 </h3>
 
-                <div className="p-8 rounded-[2rem] bg-rose-50 border border-rose-100 flex flex-col md:flex-row items-center gap-8">
-                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm shrink-0">
-                    <Trash2 className="w-8 h-8" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Password Change Form */}
+                  <div className="p-8 rounded-[2rem] border border-slate-100 bg-slate-50 space-y-6">
+                    <div>
+                      <h4 className="text-lg font-black text-slate-900 mb-1">Alterar Senha</h4>
+                      <p className="text-slate-500 text-xs font-medium">
+                        Escolha uma nova senha forte com pelo menos 6 caracteres para proteger sua conta.
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleUpdatePassword} className="space-y-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Nova Senha</label>
+                        <input
+                          type="password"
+                          className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-700 transition-all text-sm"
+                          placeholder="Digite a nova senha"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Confirmar Nova Senha</label>
+                        <input
+                          type="password"
+                          className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-700 transition-all text-sm"
+                          placeholder="Confirme a nova senha"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isUpdatingPassword}
+                        className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-sm transition-all disabled:opacity-50 shadow-lg shadow-slate-200"
+                      >
+                        {isUpdatingPassword ? 'Atualizando...' : 'Atualizar Senha'}
+                      </button>
+                    </form>
                   </div>
-                  <div className="flex-1 text-center md:text-left">
-                    <h4 className="text-lg font-black text-slate-900 mb-1">Deletar Minha Conta</h4>
-                    <p className="text-slate-500 text-sm font-medium">
-                      Isso removerá permanentemente seu histórico de compras, saldo e todos os anúncios ativos no marketplace.
-                    </p>
+
+                  {/* Delete Account */}
+                  <div className="p-8 rounded-[2rem] bg-rose-50/50 border border-rose-100 flex flex-col justify-between space-y-6">
+                    <div className="space-y-4">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm shrink-0">
+                        <Trash2 className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-black text-slate-900 mb-1">Deletar Minha Conta</h4>
+                        <p className="text-slate-500 text-xs font-medium leading-relaxed">
+                          Isso removerá permanentemente seu histórico de compras, saldo e todos os anúncios ativos no marketplace. Esta ação é irreversível.
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={handleDeleteAccount}
+                      className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black hover:bg-rose-700 transition-all shadow-lg shadow-rose-100 text-sm"
+                    >
+                      Excluir Permanentemente
+                    </button>
                   </div>
-                  <button 
-                    onClick={handleDeleteAccount}
-                    className="px-8 py-4 bg-rose-600 text-white rounded-2xl font-black hover:bg-rose-700 transition-all shadow-xl shadow-rose-100 whitespace-nowrap"
-                  >
-                    Excluir Permanentemente
-                  </button>
-                </div>
-                
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div className="p-6 rounded-3xl border border-slate-100 space-y-4">
-                      <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
-                        <Shield className="w-4 h-4 text-emerald-500" /> Autenticação em Duas Etapas
-                      </h4>
-                      <p className="text-xs text-slate-500 font-medium">Sua conta está protegida por criptografia de ponta a ponta.</p>
-                      <button className="text-xs font-black text-indigo-600 hover:underline">Configurar 2FA</button>
-                   </div>
-                   <div className="p-6 rounded-3xl border border-slate-100 space-y-4">
-                      <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4 text-amber-500" /> Sessões Ativas
-                      </h4>
-                      <p className="text-xs text-slate-500 font-medium">Você está conectado apenas neste dispositivo no momento.</p>
-                      <button className="text-xs font-black text-rose-600 hover:underline">Sair de tudo</button>
-                   </div>
                 </div>
               </motion.div>
             )}

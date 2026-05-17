@@ -52,6 +52,7 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  product_image?: string;
 }
 
 export interface Review {
