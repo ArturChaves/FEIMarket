@@ -4,12 +4,13 @@ import { Product } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { ProductGrid } from '@/components/ProductGrid';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Package, Info } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export default function MyProducts() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -47,8 +48,7 @@ export default function MyProducts() {
   };
 
   const handleEdit = (id: string) => {
-    // Navigate to edit page or open modal
-    toast.info(`Edição do produto ${id} não implementada - Reutilizaria o form de Publish.`);
+    navigate(`/products/edit/${id}`);
   };
 
   return (

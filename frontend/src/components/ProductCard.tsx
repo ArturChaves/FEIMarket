@@ -16,7 +16,7 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive }: ProductCardProps) => {
   const imageUrl = product.images?.[0] || 'https://via.placeholder.com/300';
-  const { user } = useAuth();
+  const { user, refreshCartCount } = useAuth();
   const navigate = useNavigate();
   const isOwner = user?.id === product.seller_id;
 
@@ -32,6 +32,9 @@ export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive 
     }
     try {
       await api.cart.addItem(user.id, product._id, 1);
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
       toast.success('Produto adicionado ao carrinho!');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao adicionar item.');
@@ -90,16 +93,18 @@ export const ProductCard = ({ product, showAdminActions, onEdit, onToggleActive 
           </span>
           
           {isOwner ? (
-            <button 
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/my-products');
-              }}
-              className="p-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm"
-              title="Gerenciar Produto"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
+            !showAdminActions && (
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/my-products');
+                }}
+                className="p-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm"
+                title="Gerenciar Produto"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+            )
           ) : (
             <button 
               onClick={handleAddToCart}

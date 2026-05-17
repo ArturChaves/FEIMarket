@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout, cartCount } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -69,6 +69,14 @@ export default function Layout({ children }: { children: ReactNode }) {
                   >
                     <PlusCircle className="w-6 h-6" />
                   </Link>
+
+                  <Link 
+                    to="/my-products" 
+                    className="p-2.5 bg-slate-50 text-slate-500 rounded-xl hover:bg-slate-100 hover:text-indigo-600 transition-colors shadow-sm"
+                    title="Meus Produtos"
+                  >
+                    <Package className="w-6 h-6" />
+                  </Link>
                   
                   <Link 
                     to="/cart" 
@@ -76,7 +84,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                     title="Carrinho"
                   >
                     <ShoppingCart className="w-6 h-6" />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-200">
+                        {cartCount}
+                      </span>
+                    )}
                   </Link>
                 </>
               )}

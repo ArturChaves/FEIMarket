@@ -9,7 +9,7 @@ import { motion } from 'motion/react';
 import { toast } from 'react-toastify';
 
 export default function Cart() {
-  const { user } = useAuth();
+  const { user, refreshCartCount } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,6 +36,9 @@ export default function Cart() {
     try {
       await api.cart.updateItem(user.id, productId, quantity);
       loadCart();
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
     } catch (err: any) {
       toast.error(err.message || 'Erro ao atualizar quantidade.');
     }
@@ -46,6 +49,9 @@ export default function Cart() {
     try {
       await api.cart.removeItem(user.id, productId);
       loadCart();
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
     } catch (err: any) {
       toast.error(err.message || 'Erro ao remover item.');
     }
@@ -57,6 +63,9 @@ export default function Cart() {
     try {
       await api.cart.clear(user.id);
       setItems([]);
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
     } catch (err: any) {
       toast.error(err.message || 'Erro ao limpar carrinho.');
     }

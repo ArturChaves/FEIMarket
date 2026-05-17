@@ -42,8 +42,11 @@ export const api = {
     },
     create: (formData: FormData) => 
       fetcher<{ product: Product }>('/products', { method: 'POST', body: formData }),
-    update: (id: string, body: any) => 
-      fetcher<{ product: Product }>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    update: (id: string, body: FormData | any) => 
+      fetcher<{ product: Product }>(`/products/${id}`, { 
+        method: 'PUT', 
+        body: body instanceof FormData ? body : JSON.stringify(body) 
+      }),
     delete: (id: string, userId: string) => 
       fetcher<{ message: string }>(`/products/${id}`, { method: 'DELETE', body: JSON.stringify({ userId }) }),
   },
@@ -71,6 +74,7 @@ export const api = {
       return fetcher<UserProfileResponse>(`/users/${userId}/profile`);
     },
     updateProfile: (userId: string, data: any) => fetcher<{ user: User }>(`/users/${userId}/profile`, { method: 'PUT', body: JSON.stringify(data) }),
+    addBalance: (userId: string, amount: number) => fetcher<{ user: User, message: string }>(`/users/${userId}/add-balance`, { method: 'POST', body: JSON.stringify({ amount }) }),
     uploadAvatar: (userId: string, file: File) => {
       const formData = new FormData();
       formData.append('avatar', file);

@@ -40,6 +40,32 @@ export default function Profile() {
   const [myProducts, setMyProducts] = useState<Product[]>([]);
   const [myOrders, setMyOrders] = useState<any[]>([]);
 
+  // Add Balance State
+  const [isAddingBalance, setIsAddingBalance] = useState(false);
+  const [balanceAmount, setBalanceAmount] = useState('');
+
+  const handleAddBalanceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    const amount = parseFloat(balanceAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Por favor, insira um valor válido maior que zero.');
+      return;
+    }
+    setIsUpdating(true);
+    try {
+      const res = await api.users.addBalance(user.id, amount);
+      setUser(res.user);
+      toast.success(`R$ ${amount.toFixed(2)} adicionados com sucesso!`);
+      setIsAddingBalance(false);
+      setBalanceAmount('');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao adicionar saldo.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return;
@@ -158,9 +184,46 @@ export default function Profile() {
             <h3 className="text-3xl font-display font-black tracking-tighter mb-4">
               R$ {user?.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h3>
-            <button className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-colors">
-              Adicionar Saldo
-            </button>
+            
+            {isAddingBalance ? (
+              <form onSubmit={handleAddBalanceSubmit} className="space-y-3 relative z-10 animate-in fade-in duration-200">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="Valor em R$ (ex: 50.00)"
+                  className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white outline-none focus:ring-2 focus:ring-indigo-500 font-bold placeholder:text-white/40 text-sm"
+                  value={balanceAmount}
+                  onChange={(e) => setBalanceAmount(e.target.value)}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    Confirmar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingBalance(false);
+                      setBalanceAmount('');
+                    }}
+                    className="flex-1 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button 
+                onClick={() => setIsAddingBalance(true)}
+                className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-colors relative z-10"
+              >
+                Adicionar Saldo
+              </button>
+            )}
           </div>
         </div>
 
@@ -289,7 +352,11 @@ export default function Profile() {
                             <p className="font-black text-slate-700">{p.units_sold || 0}</p>
                           </div>
                           <div className="flex gap-2">
-                            <button className="p-2 bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                            <button 
+                              onClick={() => navigate(`/products/edit/${p._id}`)}
+                              className="p-2 bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                              title="Editar Produto"
+                            >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 

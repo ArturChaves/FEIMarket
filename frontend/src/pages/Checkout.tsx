@@ -8,11 +8,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-toastify';
 
 export default function Checkout() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, refreshCartCount } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isAddingQuickBalance, setIsAddingQuickBalance] = useState(false);
 
   useEffect(() => {
     const loadCart = async () => {
@@ -28,8 +29,25 @@ export default function Checkout() {
     loadCart();
   }, [user, navigate]);
 
-  const total = items.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+  const total = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const canAfford = (user?.balance || 0) >= total;
+
+  const handleQuickAddBalance = async () => {
+    if (!user) return;
+    const needed = total - user.balance;
+    if (needed <= 0) return;
+
+    setIsAddingQuickBalance(true);
+    try {
+      const res = await api.users.addBalance(user.id, needed);
+      setUser(res.user);
+      toast.success(`R$ ${needed.toFixed(2)} adicionados com sucesso! Seu saldo foi atualizado.`);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao adicionar saldo.');
+    } finally {
+      setIsAddingQuickBalance(false);
+    }
+  };
 
   const handleConfirm = async () => {
     if (!user) return;
@@ -43,8 +61,10 @@ export default function Checkout() {
       await api.orders.checkout(user.id);
       // Update local balance
       setUser({ ...user, balance: user.balance - total });
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
       setIsSuccess(true);
-      setTimeout(() => navigate('/history'), 3000);
     } catch (err: any) {
       toast.error(err.message || 'Erro ao processar compra.');
     } finally {
@@ -58,22 +78,25 @@ export default function Checkout() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-12 rounded-3xl shadow-2xl border border-gray-100 text-center max-w-md"
+          className="bg-white p-12 rounded-3xl shadow-2xl border border-gray-100 text-center max-w-md w-full"
         >
           <div className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8">
             <CheckCircle2 className="w-16 h-16" />
           </div>
           <h1 className="text-3xl font-display font-extrabold text-gray-900 mb-4">Compra Confirmada!</h1>
-          <p className="text-gray-500 font-medium mb-8">
-            Sua transação foi processada com sucesso no PostgreSQL e o recibo gerado. Redirecionando para seu histórico...
+          <p className="text-gray-500 font-medium mb-4">
+            Seu pedido foi processado com sucesso e será entregue em breve!
           </p>
-          <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: '100%' }}
-              transition={{ duration: 3 }}
-              className="bg-green-500 h-full"
-            ></motion.div>
+          <p className="text-sm text-gray-400 mb-8">
+            Você pode acompanhar o status da sua compra no seu histórico de pedidos.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link to="/history" className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors">
+              Ver Meus Pedidos
+            </Link>
+            <Link to="/" className="w-full py-4 bg-gray-50 text-gray-700 rounded-xl font-bold hover:bg-gray-100 transition-colors border border-gray-200">
+              Continuar Comprando
+            </Link>
           </div>
         </motion.div>
       </div>
@@ -104,10 +127,20 @@ export default function Checkout() {
             </div>
             
             {!canAfford && (
-              <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+              <div className="p-5 bg-red-50 border border-red-100 rounded-2xl flex flex-col gap-4">
                 <p className="text-sm text-red-600 font-medium">
                   <strong>Saldo insuficiente.</strong> Você precisa de mais {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total - (user?.balance || 0))} para completar esta compra.
                 </p>
+                <button
+                  onClick={handleQuickAddBalance}
+                  disabled={isAddingQuickBalance}
+                  className="w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors flex items-center justify-center disabled:opacity-50"
+                >
+                  {isAddingQuickBalance ? 'Processando depósito...' : `Adicionar R$ ${(total - (user?.balance || 0)).toFixed(2)} e Continuar`}
+                </button>
+                <Link to="/profile" className="w-full py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors flex items-center justify-center text-sm border border-slate-200">
+                  Gerenciar Carteira (Perfil)
+                </Link>
               </div>
             )}
           </div>
@@ -158,15 +191,15 @@ export default function Checkout() {
             {items.map(item => (
               <div key={item.productId} className="flex gap-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
                 <img 
-                  src={item.product.images?.[0] || 'https://via.placeholder.com/60'} 
+                  src={item.images?.[0] || 'https://via.placeholder.com/60'} 
                   alt="" 
                   className="w-16 h-16 rounded-xl object-cover flex-shrink-0" 
                 />
                 <div className="flex-grow">
-                  <h4 className="font-bold text-gray-900 text-sm line-clamp-1">{item.product.title}</h4>
+                  <h4 className="font-bold text-gray-900 text-sm line-clamp-1">{item.title}</h4>
                   <p className="text-xs text-gray-400 mt-0.5">Qtd: {item.quantity}</p>
                   <p className="text-blue-600 font-bold text-sm mt-1">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.product.price)}
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}
                   </p>
                 </div>
               </div>

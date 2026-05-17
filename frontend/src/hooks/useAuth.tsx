@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types';
+import { api } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -9,6 +10,9 @@ interface AuthContextType {
   isAdmin: boolean;
   isLoading: boolean;
   setUser: (user: User | null) => void;
+  cartCount: number;
+  setCartCount: (count: number) => void;
+  refreshCartCount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +34,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
+  const [cartCount, setCartCount] = useState(0);
+
+  const refreshCartCount = useCallback(async () => {
+    if (!user) {
+      setCartCount(0);
+      return;
+    }
+    try {
+      const data = await api.cart.get(user.id);
+      const count = data.items.reduce((acc: number, item: any) => acc + item.quantity, 0);
+      setCartCount(count);
+    } catch (err) {
+      console.error('Failed to fetch cart count', err);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      refreshCartCount();
+    } else {
+      setCartCount(0);
+    }
+  }, [user, refreshCartCount]);
+
   const login = useCallback((userData: User) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
@@ -45,7 +73,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isAdmin, isLoading, setUser }}>
+    <AuthContext.Provider value={{ 
+      user, login, logout, isAuthenticated, isAdmin, isLoading, setUser,
+      cartCount, setCartCount, refreshCartCount 
+    }}>
       {children}
     </AuthContext.Provider>
   );

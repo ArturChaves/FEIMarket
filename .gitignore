@@ -40,3 +40,15 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# ============================================================
+# Vite
+# ============================================================
+.vite/
+node_modules/.vite/
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+backend/dist/
+frontend/.vite/
+
