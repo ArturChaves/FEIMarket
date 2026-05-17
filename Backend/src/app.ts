@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 import cors from 'cors';
 import { connectMongo } from './config/mongo';
 import { connectCassandra } from './config/cassandra';
@@ -20,6 +22,7 @@ const PORT = process.env['PORT'] ?? 4000;
 
 app.use(cors());
 app.use(express.json());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/health', async (_req, res) => {
   const [postgres, mongo, redisStatus, cassandra, minio] = await Promise.all([
