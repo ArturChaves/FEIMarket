@@ -7,14 +7,8 @@ interface SearchBarProps {
   compact?: boolean;
 }
 
-const CATEGORIES = ['Eletrônicos', 'Livros', 'Vestuário', 'Casa & Cozinha', 'Esportes', 'Outros'];
-const SORT_OPTIONS = [
-  { value: 'recent', label: 'Mais Recentes' },
-  { value: 'rating', label: 'Melhor Avaliação' },
-  { value: 'oldest', label: 'Mais Antigos' },
-  { value: 'price_asc', label: 'Preço: Menor para Maior' },
-  { value: 'price_desc', label: 'Preço: Maior para Menor' },
-];
+import { Select } from './Select';
+import { CATEGORIES, SORT_OPTIONS } from '../lib/constants';
 
 export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) => {
   const [search, setSearch] = useState(initialValues?.search || '');
@@ -32,20 +26,20 @@ export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) 
   if (compact) {
     return (
       <div className="relative w-full">
-        <form onSubmit={handleSearch} className="flex bg-slate-100 rounded-xl border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
-          <select 
+        <form onSubmit={handleSearch} className="flex bg-slate-100 rounded-xl border border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
+          <Select
             value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
-              onSearch({ search, category: e.target.value, minPrice, maxPrice, sortBy });
+            onChange={(val) => {
+              setCategory(val);
+              onSearch({ search, category: val, minPrice, maxPrice, sortBy });
             }}
-            className="bg-slate-200/50 px-4 py-2.5 text-sm font-medium text-slate-600 border-r border-slate-200 outline-none hover:bg-slate-200 transition-colors cursor-pointer"
-          >
-            <option value="">Categorias</option>
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+            options={[
+              { value: '', label: 'Categorias' },
+              ...CATEGORIES.map(cat => ({ value: cat, label: cat }))
+            ]}
+            className="w-36 md:w-48"
+            buttonClassName="!bg-slate-200/50 !border-0 !border-r !border-slate-200 !rounded-none !rounded-l-xl !h-full hover:!bg-slate-200"
+          />
           <div className="flex-1 flex items-center pr-1">
             <input
               type="text"
@@ -91,15 +85,12 @@ export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) 
             </div>
             <div className="md:col-span-2">
                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Ordenar Mercado</label>
-               <select 
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-600"
+               <Select 
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                {SORT_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+                onChange={(val) => setSortBy(val)}
+                options={SORT_OPTIONS}
+                buttonClassName="!bg-slate-50 !border-slate-100 !rounded-xl !text-sm !font-bold !text-slate-600 hover:!bg-slate-100"
+              />
             </div>
             <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-50">
                <button 
@@ -122,7 +113,7 @@ export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) 
   return (
     <div id="search-container" className="w-full max-w-4xl mx-auto">
       <form onSubmit={handleSearch} className="relative group">
-        <div className="flex bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden ring-offset-2 focus-within:ring-2 focus-within:ring-blue-500 transition-all duration-300">
+        <div className="flex bg-white rounded-2xl shadow-lg border border-gray-200 ring-offset-2 focus-within:ring-2 focus-within:ring-blue-500 transition-all duration-300">
           <div className="flex items-center pl-5 pointer-events-none text-gray-400">
             <Search className="w-5 h-5" />
           </div>
@@ -146,7 +137,7 @@ export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) 
           </button>
           <button
             type="submit"
-            className="bg-blue-600 text-white px-8 py-4 font-semibold hover:bg-blue-700 transition-colors"
+            className="bg-blue-600 text-white px-8 py-4 rounded-r-2xl font-semibold hover:bg-blue-700 transition-colors"
           >
             Buscar
           </button>
@@ -156,17 +147,14 @@ export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) 
           <div className="absolute top-full left-0 right-0 mt-3 p-6 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Categoria</label>
-              <select 
-                id="category-filter"
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              <Select 
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="">Todas as categorias</option>
-                {CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+                onChange={(val) => setCategory(val)}
+                options={[
+                  { value: '', label: 'Todas as categorias' },
+                  ...CATEGORIES.map(cat => ({ value: cat, label: cat }))
+                ]}
+              />
             </div>
 
             <div>
@@ -195,15 +183,12 @@ export const SearchBar = ({ onSearch, initialValues, compact }: SearchBarProps) 
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Ordenar por</label>
-              <select 
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-sm"
+              <Select 
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                {SORT_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+                onChange={(val) => setSortBy(val)}
+                options={SORT_OPTIONS}
+                buttonClassName="!font-bold !text-sm"
+              />
             </div>
 
             <div className="md:col-span-3 flex justify-end gap-3 pt-6 border-t border-gray-100">

@@ -6,7 +6,8 @@ import { ImageUploader } from '@/components/ImageUploader';
 import { Package, Tag, Layers, Settings, FileText, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 
-const CATEGORIES = ['Hardware', 'Software', 'Livros', 'Serviços', 'Eletrônicos', 'Outros'];
+import { CATEGORIES } from '@/lib/constants';
+import { Select } from '@/components/Select';
 
 export default function Publish() {
   const { user } = useAuth();
@@ -115,13 +116,12 @@ export default function Publish() {
                 <label className="block text-sm font-bold text-gray-700 mb-2">Categoria</label>
                 <div className="relative">
                   <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                  <select
-                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl appearance-none focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+                  <Select
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  >
-                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, category: val })}
+                    options={CATEGORIES.map(cat => ({ value: cat, label: cat }))}
+                    buttonClassName="!pl-12 !pr-4 !py-4 !bg-gray-50 !border-gray-200 !rounded-2xl focus:!ring-2 focus:!ring-blue-500 hover:!bg-gray-50"
+                  />
                 </div>
               </div>
 

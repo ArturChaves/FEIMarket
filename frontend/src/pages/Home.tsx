@@ -8,6 +8,8 @@ import { motion } from 'motion/react';
 import { ArrowRight, Sparkles, ShieldCheck, ShoppingBag, Package, Zap } from 'lucide-react';
 
 import { useSearchParams } from 'react-router-dom';
+import { Select } from '@/components/Select';
+import { SORT_OPTIONS } from '@/lib/constants';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -78,21 +80,16 @@ export default function Home() {
                <span className="text-[10px] font-bold text-indigo-600 uppercase">Página {pagination.page}</span>
             </div>
             
-            <select 
+            <Select 
               value={searchParams.get('sort') || 'recent'}
-              onChange={(e) => {
+              onChange={(val) => {
                 const params = new URLSearchParams(searchParams);
-                params.set('sort', e.target.value);
+                params.set('sort', val);
                 setSearchParams(params);
               }}
-              className="px-4 py-2 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
-            >
-              <option value="recent">Mais Recentes</option>
-              <option value="rating">Melhor Avaliação</option>
-              <option value="oldest">Mais Antigos</option>
-              <option value="price_asc">Menor Preço</option>
-              <option value="price_desc">Maior Preço</option>
-            </select>
+              options={SORT_OPTIONS}
+              buttonClassName="!bg-white !border-slate-200 !rounded-2xl !text-xs !font-bold !text-slate-600 hover:!bg-slate-50"
+            />
           </div>
         </div>
 

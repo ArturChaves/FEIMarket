@@ -61,7 +61,7 @@ export default function Cart() {
     }
   };
 
-  const subtotal = items.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+  const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   if (isLoading) {
     return (

@@ -10,21 +10,21 @@ interface CartItemRowProps {
 }
 
 export const CartItemRow = ({ item, onUpdateQuantity, onRemove }: CartItemRowProps) => {
-  const imageUrl = item.product.images?.[0] || 'https://via.placeholder.com/100';
+  const imageUrl = item.images?.[0] || 'https://via.placeholder.com/100';
 
   return (
     <div className="flex items-center gap-6 py-6 border-b border-gray-100 last:border-0">
       <Link to={`/products/${item.productId}`} className="w-24 h-24 rounded-lg bg-gray-50 overflow-hidden flex-shrink-0">
-        <img src={imageUrl} alt={item.product.title} className="w-full h-full object-cover" />
+        <img src={imageUrl} alt={item.title} className="w-full h-full object-cover" />
       </Link>
       
       <div className="flex-grow">
         <Link to={`/products/${item.productId}`} className="font-semibold text-gray-900 hover:text-blue-600 transition-colors">
-          {item.product.title}
+          {item.title}
         </Link>
-        <p className="text-sm text-gray-500 mt-1">Vendido por: User {item.product.seller_id.slice(0, 8)}</p>
+        <p className="text-sm text-gray-500 mt-1">Vendido por: {item.seller_name}</p>
         <p className="text-lg font-bold text-gray-900 mt-2">
-          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.product.price)}
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}
         </p>
       </div>
 
@@ -37,7 +37,7 @@ export const CartItemRow = ({ item, onUpdateQuantity, onRemove }: CartItemRowPro
         </button>
         <span className="w-8 text-center font-bold text-gray-900">{item.quantity}</span>
         <button
-          onClick={() => onUpdateQuantity(item.productId, Math.min(item.product.stock, item.quantity + 1))}
+          onClick={() => onUpdateQuantity(item.productId, Math.min(item.stock, item.quantity + 1))}
           className="p-1.5 rounded-md hover:bg-white hover:shadow-sm text-gray-600 transition-all"
         >
           <Plus className="w-4 h-4" />
@@ -47,7 +47,7 @@ export const CartItemRow = ({ item, onUpdateQuantity, onRemove }: CartItemRowPro
       <div className="text-right w-32 hidden sm:block">
         <p className="text-sm text-gray-400 mb-1">Subtotal</p>
         <p className="font-bold text-gray-900">
-          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.product.price * item.quantity)}
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}
         </p>
       </div>
 

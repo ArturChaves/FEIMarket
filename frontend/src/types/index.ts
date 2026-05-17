@@ -29,14 +29,11 @@ export interface Product {
 export interface CartItem {
   productId: string;
   quantity: number;
-  product: {
-    _id: string;
-    title: string;
-    price: number;
-    stock: number;
-    images: string[];
-    seller_id: string;
-  };
+  title: string;
+  price: number;
+  stock: number;
+  images: string[];
+  seller_name: string;
 }
 
 export interface Order {
