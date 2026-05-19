@@ -167,8 +167,26 @@ services:
       redis:
         condition: service_healthy
 
+  cassandra-init:
+    image: cassandra:4.1
+    container_name: marketplace_cassandra_init
+    restart: on-failure
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    networks:
+      - marketplace_net
+    volumes:
+      - ./init.cql:/init.cql
+    entrypoint: >
+      /bin/sh -c "
+        cqlsh cassandra -f /init.cql &&
+        echo 'Keyspace e tabelas do Cassandra criados com sucesso!';
+      "
+
   cassandra-web:
     image: dcagatay/cassandra-web:latest
+    platform: linux/amd64
     container_name: marketplace_cassandra_web
     restart: unless-stopped
     environment:
@@ -223,8 +241,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      cassandra:
-        condition: service_healthy
+      cassandra-init:
+        condition: service_completed_successfully
       minio:
         condition: service_healthy
 
